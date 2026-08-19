@@ -17,6 +17,13 @@ the guardrails written against their causes of death, lives in
 
 ## Status
 
+**M2 — verdicts & inspector.** Click any statement, formula, or argument
+to inspect it: truth states explained, vacuous conditionals explained,
+invalid arguments shown with their countermodel (a world where every
+premise holds and the conclusion fails), chains listed. The contradiction
+diagnosis is actionable — unassert a core member from inside the verdict
+pane.
+
 **M1 — the app.** `wasm/` bridges the engine to the browser (one call:
 `evaluate(universeJSON) → verdictsJSON`); `app/` is the Vue 3 workbench —
 guided composer, live verdicts, localStorage autosave, JSON export/import.

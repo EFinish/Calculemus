@@ -38,6 +38,14 @@ export const verdicts = ref<Verdicts | null>(null);
 export const engineError = ref("");
 export const activeScenario = ref("");
 
+// Inspector selection: a statement, formula, or argument id. Clicking the
+// selected row again deselects.
+export const selected = ref<string | null>(null);
+
+export function select(id: string): void {
+  selected.value = selected.value === id ? null : id;
+}
+
 let timer: ReturnType<typeof setTimeout> | undefined;
 async function evaluateNow() {
   try {
@@ -123,6 +131,7 @@ export function referencedBy(id: string): string[] {
 
 export function removeRef(id: string): void {
   if (referencedBy(id).length > 0) return;
+  if (selected.value === id) selected.value = null;
   universe.statements = spliceById(universe.statements, id);
   universe.formulas = spliceById(universe.formulas ?? [], id);
   universe.arguments = spliceById(universe.arguments ?? [], id);

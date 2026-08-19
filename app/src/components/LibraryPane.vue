@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { universe, verdicts, isAsserted, setAsserted, referencedBy, removeRef } from "../store";
+import { universe, verdicts, isAsserted, setAsserted, referencedBy, removeRef, select, selected } from "../store";
 import { renderRef } from "../render";
 import StatementComposer from "./StatementComposer.vue";
 import FormulaComposer from "./FormulaComposer.vue";
@@ -30,8 +30,8 @@ function deleteTitle(id: string): string {
       <p v-if="universe.statements.length === 0" class="muted small">
         The atoms of your universe. Compose one below.
       </p>
-      <div v-for="s in universe.statements" :key="s.id" class="row">
-        <label class="assert small" :title="'Assert: commit to this being true'">
+      <div v-for="s in universe.statements" :key="s.id" class="row selectable" :class="{ selected: selected === s.id }" @click="select(s.id)">
+        <label class="assert small" :title="'Assert: commit to this being true'" @click.stop>
           <input
             type="checkbox"
             :checked="isAsserted(s.id)"
@@ -47,7 +47,7 @@ function deleteTitle(id: string): string {
           class="small"
           :disabled="referencedBy(s.id).length > 0"
           :title="deleteTitle(s.id)"
-          @click="removeRef(s.id)"
+          @click.stop="removeRef(s.id)"
         >
           ✕
         </button>
@@ -60,8 +60,8 @@ function deleteTitle(id: string): string {
       <p v-if="(universe.formulas ?? []).length === 0" class="muted small">
         Connect statements with NOT, AND, OR, IF-THEN… Needs at least one statement.
       </p>
-      <div v-for="f in universe.formulas" :key="f.id" class="row">
-        <label class="assert small">
+      <div v-for="f in universe.formulas" :key="f.id" class="row selectable" :class="{ selected: selected === f.id }" @click="select(f.id)">
+        <label class="assert small" @click.stop>
           <input
             type="checkbox"
             :checked="isAsserted(f.id)"
@@ -82,7 +82,7 @@ function deleteTitle(id: string): string {
           class="small"
           :disabled="referencedBy(f.id).length > 0"
           :title="deleteTitle(f.id)"
-          @click="removeRef(f.id)"
+          @click.stop="removeRef(f.id)"
         >
           ✕
         </button>
@@ -95,7 +95,7 @@ function deleteTitle(id: string): string {
       <p v-if="(universe.arguments ?? []).length === 0" class="muted small">
         Premises ⊢ conclusion. Validity is computed, never declared.
       </p>
-      <div v-for="a in universe.arguments" :key="a.id" class="row">
+      <div v-for="a in universe.arguments" :key="a.id" class="row selectable" :class="{ selected: selected === a.id }" @click="select(a.id)">
         <span class="grow">
           <strong>{{ a.title }}</strong>
           <span class="muted small">
@@ -110,7 +110,7 @@ function deleteTitle(id: string): string {
           valid
         </span>
         <span v-else-if="verdicts" class="badge bad">invalid</span>
-        <button class="small" title="Delete" @click="removeRef(a.id)">✕</button>
+        <button class="small" title="Delete" @click.stop="removeRef(a.id)">✕</button>
       </div>
       <ArgumentComposer />
     </section>
@@ -132,5 +132,12 @@ function deleteTitle(id: string): string {
 }
 .conflict {
   color: var(--false);
+}
+.selectable {
+  cursor: pointer;
+}
+.selectable.selected {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 </style>

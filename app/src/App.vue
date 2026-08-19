@@ -11,6 +11,7 @@ import {
 } from "./store";
 import LibraryPane from "./components/LibraryPane.vue";
 import VerdictPane from "./components/VerdictPane.vue";
+import SelectionInspector from "./components/SelectionInspector.vue";
 
 const fileInput = ref<HTMLInputElement>();
 const importError = ref("");
@@ -57,7 +58,10 @@ function onNew() {
 
   <main>
     <LibraryPane />
-    <VerdictPane />
+    <div class="right">
+      <VerdictPane />
+      <SelectionInspector />
+    </div>
   </main>
 </template>
 
@@ -99,9 +103,19 @@ main {
   padding: 1rem;
   align-items: start;
 }
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 4rem;
+}
 @media (max-width: 900px) {
   main {
     grid-template-columns: 1fr;
+  }
+  .right {
+    position: static;
   }
 }
 </style>

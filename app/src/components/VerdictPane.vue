@@ -3,7 +3,7 @@
 // inspector. The full inspector (countermodels, per-selection context,
 // diagnosis guidance) is milestone M2.
 import { computed } from "vue";
-import { universe, verdicts, engineError } from "../store";
+import { universe, verdicts, engineError, activeScenario, setAsserted } from "../store";
 import { renderRef } from "../render";
 
 const argTitle = (id: string) =>
@@ -43,6 +43,14 @@ const chains = computed(
         <div v-for="id in verdicts.unsatCore" :key="id" class="row small">
           <span class="badge bad">✗</span>
           <span class="grow">{{ renderRef(universe, id) }}</span>
+          <button
+            v-if="!activeScenario"
+            class="small"
+            :title="`Unassert: stop holding this true`"
+            @click="setAsserted(id, false)"
+          >
+            unassert
+          </button>
         </div>
         <p class="muted small">
           Derived truths are suspended: a contradiction entails everything.
@@ -61,12 +69,12 @@ const chains = computed(
 </template>
 
 <style scoped>
+/* Stickiness lives on App.vue's .right wrapper, which stacks this pane
+   with the inspector. */
 .stack {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  position: sticky;
-  top: 4rem;
 }
 h3 {
   margin: 0.8rem 0 0.2rem;
