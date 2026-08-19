@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "title": "Is it time to play?",
+  "statements": [
+    { "id": "s_red", "text": "all of the ball is red", "subject": "the ball", "quantifier": "ALL", "predicate": "red", "qualifier": "IS" },
+    { "id": "s_blue", "text": "all of the ball is blue", "subject": "the ball", "quantifier": "ALL", "predicate": "blue", "qualifier": "IS" },
+    { "id": "s_play", "text": "all of the time to play is now", "subject": "the time to play", "quantifier": "ALL", "predicate": "now", "qualifier": "IS" }
+  ],
+  "formulas": [
+    { "id": "not_play", "op": "NOT", "args": ["s_play"] },
+    { "id": "f_red_play", "op": "IMPLIES", "args": ["s_red", "s_play"] },
+    { "id": "f_blue_notplay", "op": "IMPLIES", "args": ["s_blue", "not_play"] },
+    { "id": "f_or", "op": "OR", "args": ["s_play", "s_blue"] }
+  ],
+  "assertions": [
+    { "formula": "f_red_play", "active": true, "source": "hand" },
+    { "formula": "f_blue_notplay", "active": true, "source": "hand" },
+    { "formula": "s_red", "active": true, "source": "hand" }
+  ],
+  "arguments": [
+    { "id": "a_play", "title": "Is it time to play?", "premises": ["f_red_play", "s_red"], "conclusion": "s_play" },
+    { "id": "a_affirm", "title": "Affirming the consequent", "premises": ["f_red_play", "s_play"], "conclusion": "s_red" },
+    { "id": "a_addition", "title": "Addition", "premises": ["s_play"], "conclusion": "f_or" }
+  ],
+  "scenarios": [
+    { "name": "blue too", "toggles": { "s_blue": true } },
+    { "name": "blue ball world", "toggles": { "s_red": false, "s_blue": true } }
+  ]
+}
