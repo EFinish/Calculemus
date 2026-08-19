@@ -104,6 +104,13 @@ function deleteTitle(id: string): string {
           </span>
         </span>
         <span
+          v-if="verdicts?.arguments?.find((v) => v.id === a.id)?.form"
+          class="badge info"
+          title="A recognized argument form — decorative; the verdict comes from semantics, not the name"
+        >
+          {{ verdicts?.arguments?.find((v) => v.id === a.id)?.form }}
+        </span>
+        <span
           v-if="verdicts?.arguments?.find((v) => v.id === a.id)?.valid"
           class="badge ok"
         >

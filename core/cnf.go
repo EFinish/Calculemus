@@ -15,9 +15,13 @@ type compiled struct {
 	varOf map[string]int
 	nVars int
 	defs  []clause
+	terms *termSystem
+	// regionVars[component][mask] is the "this Venn region is inhabited"
+	// variable; index 0 (the all-absent region) is unused.
+	regionVars [][]int
 }
 
-func compile(ix *index) *compiled {
+func compile(ix *index) (*compiled, error) {
 	c := &compiled{ix: ix, varOf: make(map[string]int)}
 	// Statements first, in universe order, for deterministic var numbering.
 	for i := range ix.u.Statements {
@@ -31,7 +35,44 @@ func compile(ix *index) *compiled {
 	for i := range ix.u.Formulas {
 		c.encode(&ix.u.Formulas[i])
 	}
-	return c
+
+	// M4: statements with term structure stop being free atoms — their
+	// variables are defined over the Venn-region variables of their
+	// component (see terms.go).
+	ts, err := buildTermSystem(ix.u)
+	if err != nil {
+		return nil, err
+	}
+	c.terms = ts
+	c.regionVars = make([][]int, len(ts.components))
+	for ci := range ts.components {
+		k := len(ts.components[ci].terms)
+		vars := make([]int, 1<<k)
+		for mask := 1; mask < 1<<k; mask++ {
+			c.nVars++
+			vars[mask] = c.nVars
+		}
+		c.regionVars[ci] = vars
+	}
+	for i := range ts.stmts {
+		st := &ts.stmts[i]
+		k := len(ts.components[st.component].terms)
+		var lits []int
+		for _, mask := range st.regionMasks(k) {
+			m := c.regionVars[st.component][mask]
+			if st.isUniversal() {
+				lits = append(lits, -m) // A/E: every such region empty
+			} else {
+				lits = append(lits, m) // I/O: some such region inhabited
+			}
+		}
+		if st.isUniversal() {
+			c.defineAnd(c.varOf[st.stmtID], lits)
+		} else {
+			c.defineOr(c.varOf[st.stmtID], lits)
+		}
+	}
+	return c, nil
 }
 
 func (c *compiled) lit(ref string) int { return c.varOf[ref] }

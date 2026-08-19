@@ -44,9 +44,12 @@ const chains = computed(
           <span class="badge bad">✗</span>
           <span class="grow">{{ renderRef(universe, id) }}</span>
           <button
-            v-if="!activeScenario"
             class="small"
-            :title="`Unassert: stop holding this true`"
+            :title="
+              activeScenario
+                ? 'Unassert within this scenario (the base universe is untouched)'
+                : 'Unassert: stop holding this true'
+            "
             @click="setAsserted(id, false)"
           >
             unassert

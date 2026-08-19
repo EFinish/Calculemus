@@ -8,6 +8,8 @@ import {
   resetUniverse,
   exportUniverse,
   importUniverse,
+  addScenario,
+  removeScenario,
 } from "./store";
 import LibraryPane from "./components/LibraryPane.vue";
 import CanvasPane from "./components/CanvasPane.vue";
@@ -27,6 +29,19 @@ async function onImportFile(e: Event) {
 function onNew() {
   if (window.confirm("Start a new universe? The current one is only kept if you exported it.")) {
     resetUniverse();
+  }
+}
+
+function onNewScenario() {
+  const name = window.prompt("Scenario name — a counterfactual world to explore:");
+  if (name === null) return;
+  const err = addScenario(name);
+  if (err) window.alert(err);
+}
+
+function onDeleteScenario() {
+  if (window.confirm(`Delete scenario “${activeScenario.value}”? The base universe is unaffected.`)) {
+    removeScenario(activeScenario.value);
   }
 }
 </script>
@@ -49,6 +64,8 @@ function onNew() {
         scenario: {{ sc.name }}
       </option>
     </select>
+    <button title="Create a counterfactual world: toggles you flip while it's active edit the scenario, not the base universe" @click="onNewScenario">+ scenario</button>
+    <button v-if="activeScenario" title="Delete this scenario" @click="onDeleteScenario">✕ scenario</button>
     <span class="spacer"></span>
     <button @click="onNew">New</button>
     <button @click="exportUniverse">Export</button>

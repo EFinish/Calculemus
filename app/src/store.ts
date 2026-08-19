@@ -98,11 +98,25 @@ export function addArgument(title: string, premises: string[], conclusion: strin
   (universe.arguments ??= []).push({ id: nextId("a"), title, premises, conclusion });
 }
 
+function currentScenario() {
+  return (universe.scenarios ?? []).find((s) => s.name === activeScenario.value) ?? null;
+}
+
+// Assertion state is scenario-aware: while a scenario is active, its toggles
+// shadow the base assertions, and edits write to the scenario — the base
+// universe stays untouched. Mirrors core's activeAssertions resolution.
 export function isAsserted(ref: string): boolean {
+  const sc = currentScenario();
+  if (sc && ref in sc.toggles) return sc.toggles[ref];
   return (universe.assertions ?? []).some((a) => a.formula === ref && a.active);
 }
 
 export function setAsserted(ref: string, on: boolean): void {
+  const sc = currentScenario();
+  if (sc) {
+    sc.toggles[ref] = on;
+    return;
+  }
   const list = (universe.assertions ??= []);
   const existing = list.find((a) => a.formula === ref);
   if (on) {
@@ -111,6 +125,22 @@ export function setAsserted(ref: string, on: boolean): void {
   } else if (existing) {
     list.splice(list.indexOf(existing), 1);
   }
+}
+
+export function addScenario(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "A scenario needs a name.";
+  if ((universe.scenarios ?? []).some((s) => s.name === trimmed)) {
+    return `A scenario named “${trimmed}” already exists.`;
+  }
+  (universe.scenarios ??= []).push({ name: trimmed, toggles: {} });
+  activeScenario.value = trimmed;
+  return "";
+}
+
+export function removeScenario(name: string): void {
+  universe.scenarios = (universe.scenarios ?? []).filter((s) => s.name !== name);
+  if (activeScenario.value === name) activeScenario.value = "";
 }
 
 // referencedBy lists what still points at an id; deletion is only allowed

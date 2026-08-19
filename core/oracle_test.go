@@ -13,9 +13,18 @@ import (
 // (Tseitin + DPLL + queries) must agree with it on everything — guardrail
 // R4's foundation.
 
+type regionBit struct {
+	component int
+	mask      int
+}
+
 type oracle struct {
 	ix    *index
-	atoms []string // statement ids, universe order
+	atoms []string // OPAQUE statement ids, universe order
+	ts    *termSystem
+	// One enumeration bit per Venn region per component; structured
+	// statements' truths are derived from these, never enumerated freely.
+	regions []regionBit
 }
 
 func newOracle(t *testing.T, u *Universe) *oracle {
@@ -24,23 +33,53 @@ func newOracle(t *testing.T, u *Universe) *oracle {
 	if err != nil {
 		t.Fatalf("buildIndex: %v", err)
 	}
-	o := &oracle{ix: ix}
-	for _, s := range u.Statements {
-		o.atoms = append(o.atoms, s.ID)
+	ts, err := buildTermSystem(u)
+	if err != nil {
+		t.Fatalf("buildTermSystem: %v", err)
 	}
-	if len(o.atoms) > 16 {
-		t.Fatalf("oracle limited to 16 atoms, got %d", len(o.atoms))
+	o := &oracle{ix: ix, ts: ts}
+	for i := range u.Statements {
+		if !structured(&u.Statements[i]) {
+			o.atoms = append(o.atoms, u.Statements[i].ID)
+		}
+	}
+	for ci := range ts.components {
+		k := len(ts.components[ci].terms)
+		for mask := 1; mask < 1<<k; mask++ {
+			o.regions = append(o.regions, regionBit{ci, mask})
+		}
+	}
+	if len(o.atoms)+len(o.regions) > 18 {
+		t.Fatalf("oracle limited to 18 bits, got %d atoms + %d regions",
+			len(o.atoms), len(o.regions))
 	}
 	return o
 }
 
-// forEachModel visits every assignment under which all refs hold.
+// forEachModel visits every world (opaque-atom assignment × inhabited-region
+// configuration) under which all refs hold. Structured statements get their
+// truth derived from the regions via the definitional semantics.
 func (o *oracle) forEachModel(refs []string, visit func(assign map[string]bool)) {
-	n := len(o.atoms)
-	for bits := 0; bits < 1<<n; bits++ {
-		assign := make(map[string]bool, n)
+	nA, nR := len(o.atoms), len(o.regions)
+	for bits := 0; bits < 1<<(nA+nR); bits++ {
+		assign := make(map[string]bool, nA+len(o.ts.stmts))
 		for i, id := range o.atoms {
 			assign[id] = bits&(1<<i) != 0
+		}
+		inhabited := func(ci, mask int) bool {
+			for j, r := range o.regions {
+				if r.component == ci && r.mask == mask {
+					return bits&(1<<(nA+j)) != 0
+				}
+			}
+			return false
+		}
+		for i := range o.ts.stmts {
+			st := &o.ts.stmts[i]
+			k := len(o.ts.components[st.component].terms)
+			assign[st.stmtID] = st.evalStructured(k, func(mask int) bool {
+				return inhabited(st.component, mask)
+			})
 		}
 		holds := true
 		for _, ref := range refs {

@@ -17,6 +17,14 @@ the guardrails written against their causes of death, lives in
 
 ## Status
 
+**M4 — term logic.** ALL/SOME/NONE quantifiers now mean something:
+statements sharing terms are semantically linked via Venn-region
+compilation (Boolean reading, no existential import) — Barbara validates
+from quantifier structure alone, and "all red" vs "some not red" is a
+diagnosed contradiction. Scenarios are editable in-app (toggles write to
+the counterfactual, base untouched), and valid arguments get decorative
+named-form badges (modus ponens, Barbara, …).
+
 **M3 — the canvas.** The universe as a visible web: statements, formulas,
 and arguments as nodes; every edge derived by the engine (shares /
 contradicts / chains) and color-coded, with per-type filters. Truth state

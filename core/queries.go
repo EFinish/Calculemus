@@ -26,6 +26,10 @@ type Edge struct {
 type ArgumentVerdict struct {
 	ID    string `json:"id"`
 	Valid bool   `json:"valid"`
+	// Form names a recognized argument shape ("modus ponens", "Barbara", …).
+	// Purely decorative (guardrail R1): set only on valid arguments, and an
+	// unrecognized valid argument is simply unlabeled.
+	Form string `json:"form,omitempty"`
 	// Countermodel, present when invalid: an assignment of atoms under which
 	// every premise holds and the conclusion fails.
 	Countermodel map[string]bool `json:"countermodel,omitempty"`
@@ -75,7 +79,10 @@ func evaluate(u *Universe, toggles map[string]bool) (*Verdicts, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := compile(ix)
+	c, err := compile(ix)
+	if err != nil {
+		return nil, err
+	}
 	active := activeAssertions(u, toggles)
 	assume := make([]int, len(active))
 	for i, ref := range active {
@@ -122,6 +129,9 @@ func evaluate(u *Universe, toggles map[string]bool) (*Verdicts, error) {
 		lits = append(lits, -c.lit(arg.Conclusion))
 		ok, model := c.sat(lits...)
 		av := ArgumentVerdict{ID: arg.ID, Valid: !ok}
+		if av.Valid {
+			av.Form = classifyForm(ix, &arg)
+		}
 		if ok {
 			av.Countermodel = make(map[string]bool, len(u.Statements))
 			for _, s := range u.Statements {

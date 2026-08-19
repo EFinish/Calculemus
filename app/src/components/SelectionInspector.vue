@@ -105,6 +105,13 @@ const argTitle = (id: string) =>
             hold, the conclusion holds too.
           </span>
         </p>
+        <p v-if="argVerdict.form" class="small">
+          <span class="badge info">{{ argVerdict.form }}</span>
+          <span class="muted">
+            — a recognized form. The name decorates the verdict; semantics
+            decided it.
+          </span>
+        </p>
       </template>
       <template v-else-if="argVerdict">
         <p class="small">

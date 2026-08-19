@@ -82,6 +82,7 @@ export interface Edge {
 export interface ArgumentVerdict {
   id: string;
   valid: boolean;
+  form?: string;
   countermodel?: Record<string, boolean>;
 }
 
