@@ -17,6 +17,12 @@ the guardrails written against their causes of death, lives in
 
 ## Status
 
+**M1 — the app.** `wasm/` bridges the engine to the browser (one call:
+`evaluate(universeJSON) → verdictsJSON`); `app/` is the Vue 3 workbench —
+guided composer, live verdicts, localStorage autosave, JSON export/import.
+`make e2e` runs the M1 dogfood test in headless Firefox: build a universe,
+reload the tab, everything survives.
+
 **M0 — the engine.** `core/` is a zero-dependency Go package:
 
 - the universe data model (statements → formulas → assertions/arguments),

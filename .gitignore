@@ -1,0 +1,8 @@
+# build artifacts — `make wasm` regenerates both
+app/public/calculemus.wasm
+app/public/wasm_exec.js
+
+app/node_modules/
+app/dist/
+app/test-results/
+app/playwright-report/
