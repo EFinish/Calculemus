@@ -17,6 +17,12 @@ the guardrails written against their causes of death, lives in
 
 ## Status
 
+**M3 — the canvas.** The universe as a visible web: statements, formulas,
+and arguments as nodes; every edge derived by the engine (shares /
+contradicts / chains) and color-coded, with per-type filters. Truth state
+is encoded in the node itself; clicking a node selects it in the
+inspector. Drag to arrange — positions persist in the universe document.
+
 **M2 — verdicts & inspector.** Click any statement, formula, or argument
 to inspect it: truth states explained, vacuous conditionals explained,
 invalid arguments shown with their countermodel (a world where every

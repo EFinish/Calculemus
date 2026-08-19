@@ -153,6 +153,17 @@ export function resetUniverse(): void {
   activeScenario.value = "";
 }
 
+// ---- canvas layout ----------------------------------------------------------
+
+export function setLayout(id: string, x: number, y: number): void {
+  (universe.layout ??= {})[id] = { x: Math.round(x), y: Math.round(y) };
+}
+
+// Forget all hand-placed positions; the canvas falls back to auto-placement.
+export function clearLayout(): void {
+  universe.layout = {};
+}
+
 // ---- import / export -------------------------------------------------------
 
 export function exportUniverse(): void {

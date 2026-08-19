@@ -10,6 +10,7 @@ import {
   importUniverse,
 } from "./store";
 import LibraryPane from "./components/LibraryPane.vue";
+import CanvasPane from "./components/CanvasPane.vue";
 import VerdictPane from "./components/VerdictPane.vue";
 import SelectionInspector from "./components/SelectionInspector.vue";
 
@@ -58,6 +59,7 @@ function onNew() {
 
   <main>
     <LibraryPane />
+    <CanvasPane />
     <div class="right">
       <VerdictPane />
       <SelectionInspector />
@@ -96,12 +98,22 @@ header {
   background: var(--false-soft);
   color: var(--false);
 }
+/* DESIGN §6: library | canvas | inspector — a workbench, not a site. */
 main {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) minmax(0, 1fr);
   gap: 1rem;
   padding: 1rem;
   align-items: start;
+}
+@media (max-width: 1280px) {
+  main {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  main > :nth-child(2) {
+    grid-column: 1 / -1;
+    order: 3;
+  }
 }
 .right {
   display: flex;
