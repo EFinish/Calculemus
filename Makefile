@@ -10,6 +10,8 @@ test:
 	go test ./...
 
 wasm:
+	# public/ holds only generated files, so fresh clones don't have the dirs
+	mkdir -p app/public app-boolean/public
 	GOOS=js GOARCH=wasm go build -o app/public/calculemus.wasm ./wasm
 	cp app/public/calculemus.wasm app-boolean/public/calculemus.wasm
 	cp "$(GOROOT)/lib/wasm/wasm_exec.js" app/public/wasm_exec.js
