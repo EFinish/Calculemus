@@ -113,7 +113,7 @@ function onDeleteScenario() {
     <template v-else>
       <button @click="onNew">New</button>
       <button
-        title="Load the Frege-step example: two asserted facts, one derived conclusion, no conditionals"
+        title="Load the example universe: derived relations, a red/blue exclusion, a vacuous conditional — the child and the ball"
         @click="onExample"
       >
         Example

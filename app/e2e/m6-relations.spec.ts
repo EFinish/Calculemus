@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { addArgument, headerBadge, rowOf, setAssert } from "./helpers";
+import { addArgument, headerBadge, inspect, rowOf, setAssert } from "./helpers";
 
 // The M6 dogfood (DESIGN §11): the boy/ball/red example that motivated the
 // Frege step, run through the UI. No conditionals anywhere — the connection
@@ -98,27 +98,38 @@ test("quantified verbs: all men throw some ball, socrates is a man", async ({ pa
   ).toBeVisible();
 });
 
-test("the Example button loads the Frege universe ready to explore", async ({ page }) => {
+test("the Example button loads the child-and-ball universe", async ({ page }) => {
   await openEmpty(page);
   await page.getByRole("button", { name: "Example" }).click();
-  await expect(page.getByLabel("Universe title")).toHaveValue("The Frege step");
+  await expect(page.getByLabel("Universe title")).toHaveValue("The child and the ball");
   await expect(headerBadge(page)).toHaveText("consistent");
-  await expect(
-    rowOf(page, "the boy throws some of red").getByText("⊨ true", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    rowOf(page, "The Frege step").getByText("valid", { exact: true }),
-  ).toBeVisible();
   await expect(page.getByText("worlds ≤ 6 things")).toBeVisible();
 
-  // The bundled counterfactual: assert throws-none-red → contradiction.
-  await page.getByLabel("Scenario").selectOption("throws nothing red");
+  // Derived, not asserted: the relational payoff…
+  await expect(
+    rowOf(page, "the child throws some of red").getByText("⊨ true", { exact: true }),
+  ).toBeVisible();
+  // …and the IS_NOT twin linking automatically to its positive statement.
+  await expect(
+    rowOf(page, "the ball is not red").getByText("⊨ false", { exact: true }),
+  ).toBeVisible();
+  // The blue→not-red conditional is vacuous (blue is forced false).
+  await expect(
+    rowOf(page, "(the ball is blue IMPLIES the ball is not red)").getByText("vacuous", { exact: true }),
+  ).toBeVisible();
+  await expect(rowOf(page, "test 1").getByText("valid", { exact: true })).toBeVisible();
+  await expect(rowOf(page, "test 2").getByText("valid", { exact: true })).toBeVisible();
+
+  // Repaint the ball blue → the exclusion pair fights: diagnosed core.
+  await setAssert(page, "the ball is blue");
   await expect(headerBadge(page)).toHaveText("contradictory");
+  await setAssert(page, "the ball is blue", false);
+  await expect(headerBadge(page)).toHaveText("consistent");
 
   // Replacing a non-empty universe asks first.
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Example" }).click();
-  await expect(page.getByLabel("Universe title")).toHaveValue("The Frege step");
+  await expect(page.getByLabel("Universe title")).toHaveValue("The child and the ball");
 });
 
 test("'is' typed as a verb is refused and redirected to the copula", async ({ page }) => {

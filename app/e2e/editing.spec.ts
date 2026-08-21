@@ -1,12 +1,8 @@
-import { test, expect, type Page } from "@playwright/test";
-import { F_RED, addArgument, headerBadge, openWithBallUniverse, rowOf } from "./helpers";
+import { test, expect } from "@playwright/test";
+import { F_RED, addArgument, headerBadge, openEdit, openWithBallUniverse, rowOf } from "./helpers";
 
 // Edit-in-place: ids never change on save, so every reference follows the
 // edit and the derived web reflows — including verdicts flipping.
-
-function editButton(page: Page, rowText: string) {
-  return rowOf(page, rowText).getByTitle("Edit");
-}
 
 test("editing a statement reflows every verdict that touched it", async ({ page }) => {
   await page.goto("/");
@@ -15,26 +11,25 @@ test("editing a statement reflows every verdict that touched it", async ({ page 
   await expect(headerBadge(page)).toHaveText("consistent", { timeout: 20_000 });
   await page.getByRole("button", { name: "Example" }).click();
 
-  // The Frege universe derives "throws some of red" and validates the argument.
+  // The example derives "throws some of red" from the ball being red.
   await expect(
-    rowOf(page, "the boy throws some of red").getByText("⊨ true", { exact: true }),
+    rowOf(page, "the child throws some of red").getByText("⊨ true", { exact: true }),
   ).toBeVisible();
-  await expect(rowOf(page, "The Frege step").getByText("valid", { exact: true })).toBeVisible();
 
-  // Repaint the ball: red → blue.
-  await editButton(page, "the ball is red").click();
-  await expect(page.getByText("Editing “the ball is red”")).toBeVisible();
-  await page.getByLabel("Predicate").fill("blue");
+  // Repaint the ball: red → green ("blue" already exists in this universe).
+  await openEdit(page, "the ball is red", "Editing “the ball is red”");
+  await page.getByLabel("Predicate").fill("green");
   await page.getByRole("button", { name: "Save statement" }).click();
 
-  // Same id, new meaning, everywhere at once: the row, the argument's
-  // premise list, the derivation, and the verdict.
-  await expect(rowOf(page, "the ball is blue")).toBeVisible();
-  await expect(rowOf(page, "The Frege step")).toContainText("the ball is blue");
+  // Same id, new meaning, everywhere at once: the row, the formulas that
+  // reference it, and the derivation that depended on redness.
+  await expect(rowOf(page, "the ball is green")).toBeVisible();
   await expect(
-    rowOf(page, "the boy throws some of red").getByText("⊨ true", { exact: true }),
+    rowOf(page, "(the ball is green IMPLIES the ball is not blue)"),
+  ).toBeVisible();
+  await expect(
+    rowOf(page, "the child throws some of red").getByText("⊨ true", { exact: true }),
   ).toHaveCount(0);
-  await expect(rowOf(page, "The Frege step").getByText("invalid", { exact: true })).toBeVisible();
 });
 
 test("editing a formula updates everything that references it", async ({ page }) => {
@@ -42,7 +37,7 @@ test("editing a formula updates everything that references it", async ({ page })
 
   // not_play's argument s_play → s_red; F_BLUE references not_play and must
   // re-render through it.
-  await editButton(page, "NOT (all of the time to play is now)").click();
+  await openEdit(page, "NOT (all of the time to play is now)", "Editing formula");
   // The formula being edited is excluded from its own term choices (cycle guard).
   const formulaCard = page.locator(".card", { hasText: "Formulas" });
   await expect(
@@ -69,8 +64,7 @@ test("editing an argument recomputes its verdict", async ({ page }) => {
     rowOf(page, "Is it time to play?").getByText("valid", { exact: true }),
   ).toBeVisible();
 
-  await editButton(page, "Is it time to play?").click();
-  await expect(page.getByText("Editing “Is it time to play?”")).toBeVisible();
+  await openEdit(page, "Is it time to play?", "Editing “Is it time to play?”");
   await page.getByLabel("Conclusion").selectOption({ label: "all of the ball is blue" });
   await page.getByRole("button", { name: "Save argument" }).click();
 

@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "title": "The child and the ball",
+  "statements": [
+    { "id": "s1", "text": "the ball is red",
+      "subject": "ball", "predicate": "red", "qualifier": "IS", "subjectIsIndividual": true },
+    { "id": "s2", "text": "the ball is an object",
+      "subject": "ball", "predicate": "an object", "qualifier": "IS", "subjectIsIndividual": true },
+    { "id": "s3", "text": "the child throws some of red",
+      "subject": "child", "predicate": "red", "qualifier": "IS", "subjectIsIndividual": true,
+      "verb": "throws", "objectQuantifier": "SOME" },
+    { "id": "s4", "text": "the child throws the ball",
+      "subject": "child", "predicate": "ball", "qualifier": "IS", "subjectIsIndividual": true,
+      "verb": "throws", "objectIsIndividual": true },
+    { "id": "s5", "text": "the ball is blue",
+      "subject": "ball", "predicate": "blue", "qualifier": "IS", "subjectIsIndividual": true },
+    { "id": "s6", "text": "the child throws some of an object",
+      "subject": "child", "predicate": "an object", "qualifier": "IS", "subjectIsIndividual": true,
+      "verb": "throws", "objectQuantifier": "SOME" },
+    { "id": "s7", "text": "the ball is not red",
+      "subject": "ball", "predicate": "red", "qualifier": "IS_NOT", "subjectIsIndividual": true },
+    { "id": "s8", "text": "the ball is not blue",
+      "subject": "ball", "predicate": "blue", "qualifier": "IS_NOT", "subjectIsIndividual": true }
+  ],
+  "formulas": [
+    { "id": "f1", "op": "IMPLIES", "args": ["s4", "s3"] },
+    { "id": "f2", "op": "IMPLIES", "args": ["s4", "s6"] },
+    { "id": "f3", "op": "AND", "args": ["s3", "s6"] },
+    { "id": "f4", "op": "IMPLIES", "args": ["s1", "s8"] },
+    { "id": "f5", "op": "IMPLIES", "args": ["s5", "s7"] },
+    { "id": "f6", "op": "AND", "args": ["s1", "s8"] }
+  ],
+  "assertions": [
+    { "formula": "s1", "active": true, "source": "hand" },
+    { "formula": "s4", "active": true, "source": "hand" },
+    { "formula": "s2", "active": true, "source": "hand" },
+    { "formula": "s8", "active": true, "source": "hand" }
+  ],
+  "arguments": [
+    { "id": "a1", "title": "test 1", "premises": ["s1", "s2", "s4", "f1", "f2"], "conclusion": "f3" },
+    { "id": "a2", "title": "test 2", "premises": ["f4", "f5", "s1"], "conclusion": "f6" }
+  ],
+  "scenarios": [],
+  "layout": {}
+}
