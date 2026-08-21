@@ -5,6 +5,9 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   timeout: 60_000,
+  // Verdict badges appear only after the debounced WASM evaluation; under
+  // parallel load the 5s default intermittently loses that race.
+  expect: { timeout: 10_000 },
   // Desktop viewport so the three-pane layout applies and the canvas is on
   // screen — below 1280px it reflows under the library, where raw mouse
   // coordinates for canvas drags would land outside the viewport.
