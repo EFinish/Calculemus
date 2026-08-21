@@ -1,0 +1,288 @@
+{
+  "version": 2,
+  "title": "The fifteen moods",
+  "statements": [
+    {
+      "id": "s1",
+      "text": "all men are mortal",
+      "subject": "men",
+      "quantifier": "ALL",
+      "qualifier": "IS",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s2",
+      "text": "all greeks are men",
+      "subject": "greeks",
+      "quantifier": "ALL",
+      "qualifier": "IS",
+      "predicate": "men"
+    },
+    {
+      "id": "s3",
+      "text": "all greeks are mortal",
+      "subject": "greeks",
+      "quantifier": "ALL",
+      "qualifier": "IS",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s4",
+      "text": "no men are mortal",
+      "subject": "men",
+      "quantifier": "NONE",
+      "qualifier": "IS",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s5",
+      "text": "no greeks are mortal",
+      "subject": "greeks",
+      "quantifier": "NONE",
+      "qualifier": "IS",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s6",
+      "text": "some greeks are men",
+      "subject": "greeks",
+      "quantifier": "SOME",
+      "qualifier": "IS",
+      "predicate": "men"
+    },
+    {
+      "id": "s7",
+      "text": "some greeks are mortal",
+      "subject": "greeks",
+      "quantifier": "SOME",
+      "qualifier": "IS",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s8",
+      "text": "some greeks are not mortal",
+      "subject": "greeks",
+      "quantifier": "SOME",
+      "qualifier": "IS_NOT",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s9",
+      "text": "no mortal are men",
+      "subject": "mortal",
+      "quantifier": "NONE",
+      "qualifier": "IS",
+      "predicate": "men"
+    },
+    {
+      "id": "s10",
+      "text": "all mortal are men",
+      "subject": "mortal",
+      "quantifier": "ALL",
+      "qualifier": "IS",
+      "predicate": "men"
+    },
+    {
+      "id": "s11",
+      "text": "no greeks are men",
+      "subject": "greeks",
+      "quantifier": "NONE",
+      "qualifier": "IS",
+      "predicate": "men"
+    },
+    {
+      "id": "s12",
+      "text": "some greeks are not men",
+      "subject": "greeks",
+      "quantifier": "SOME",
+      "qualifier": "IS_NOT",
+      "predicate": "men"
+    },
+    {
+      "id": "s13",
+      "text": "some men are mortal",
+      "subject": "men",
+      "quantifier": "SOME",
+      "qualifier": "IS",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s14",
+      "text": "all men are greeks",
+      "subject": "men",
+      "quantifier": "ALL",
+      "qualifier": "IS",
+      "predicate": "greeks"
+    },
+    {
+      "id": "s15",
+      "text": "some men are greeks",
+      "subject": "men",
+      "quantifier": "SOME",
+      "qualifier": "IS",
+      "predicate": "greeks"
+    },
+    {
+      "id": "s16",
+      "text": "some men are not mortal",
+      "subject": "men",
+      "quantifier": "SOME",
+      "qualifier": "IS_NOT",
+      "predicate": "mortal"
+    },
+    {
+      "id": "s17",
+      "text": "no men are greeks",
+      "subject": "men",
+      "quantifier": "NONE",
+      "qualifier": "IS",
+      "predicate": "greeks"
+    },
+    {
+      "id": "s18",
+      "text": "some mortal are men",
+      "subject": "mortal",
+      "quantifier": "SOME",
+      "qualifier": "IS",
+      "predicate": "men"
+    }
+  ],
+  "assertions": [],
+  "arguments": [
+    {
+      "id": "a1",
+      "title": "Barbara (AAA-1)",
+      "premises": [
+        "s1",
+        "s2"
+      ],
+      "conclusion": "s3"
+    },
+    {
+      "id": "a2",
+      "title": "Celarent (EAE-1)",
+      "premises": [
+        "s4",
+        "s2"
+      ],
+      "conclusion": "s5"
+    },
+    {
+      "id": "a3",
+      "title": "Darii (AII-1)",
+      "premises": [
+        "s1",
+        "s6"
+      ],
+      "conclusion": "s7"
+    },
+    {
+      "id": "a4",
+      "title": "Ferio (EIO-1)",
+      "premises": [
+        "s4",
+        "s6"
+      ],
+      "conclusion": "s8"
+    },
+    {
+      "id": "a5",
+      "title": "Cesare (EAE-2)",
+      "premises": [
+        "s9",
+        "s2"
+      ],
+      "conclusion": "s5"
+    },
+    {
+      "id": "a6",
+      "title": "Camestres (AEE-2)",
+      "premises": [
+        "s10",
+        "s11"
+      ],
+      "conclusion": "s5"
+    },
+    {
+      "id": "a7",
+      "title": "Festino (EIO-2)",
+      "premises": [
+        "s9",
+        "s6"
+      ],
+      "conclusion": "s8"
+    },
+    {
+      "id": "a8",
+      "title": "Baroco (AOO-2)",
+      "premises": [
+        "s10",
+        "s12"
+      ],
+      "conclusion": "s8"
+    },
+    {
+      "id": "a9",
+      "title": "Disamis (IAI-3)",
+      "premises": [
+        "s13",
+        "s14"
+      ],
+      "conclusion": "s7"
+    },
+    {
+      "id": "a10",
+      "title": "Datisi (AII-3)",
+      "premises": [
+        "s1",
+        "s15"
+      ],
+      "conclusion": "s7"
+    },
+    {
+      "id": "a11",
+      "title": "Bocardo (OAO-3)",
+      "premises": [
+        "s16",
+        "s14"
+      ],
+      "conclusion": "s8"
+    },
+    {
+      "id": "a12",
+      "title": "Ferison (EIO-3)",
+      "premises": [
+        "s4",
+        "s15"
+      ],
+      "conclusion": "s8"
+    },
+    {
+      "id": "a13",
+      "title": "Calemes (AEE-4)",
+      "premises": [
+        "s10",
+        "s17"
+      ],
+      "conclusion": "s5"
+    },
+    {
+      "id": "a14",
+      "title": "Dimatis (IAI-4)",
+      "premises": [
+        "s18",
+        "s14"
+      ],
+      "conclusion": "s7"
+    },
+    {
+      "id": "a15",
+      "title": "Fresison (EIO-4)",
+      "premises": [
+        "s9",
+        "s15"
+      ],
+      "conclusion": "s8"
+    }
+  ]
+}

@@ -77,3 +77,40 @@ test("Russell's barber: a one-sentence contradiction, and explosion", async ({ p
   await verdicts.getByRole("button", { name: "unassert" }).click();
   await expect(headerBadge(page)).toHaveText("consistent");
 });
+
+test("the fifteen moods: every argument valid, every badge named", async ({ page }) => {
+  await openGallery(page, "The fifteen moods");
+  const moods = [
+    "Barbara", "Celarent", "Darii", "Ferio",
+    "Cesare", "Camestres", "Festino", "Baroco",
+    "Disamis", "Datisi", "Bocardo", "Ferison",
+    "Calemes", "Dimatis", "Fresison",
+  ];
+  for (const name of moods) {
+    const row = rowOf(page, `${name} (`);
+    await expect(row.getByText("valid", { exact: true })).toBeVisible();
+    // The form badge, not the title: exact text match excludes "Name (XYZ-n)".
+    await expect(row.getByText(name, { exact: true })).toBeVisible();
+  }
+});
+
+test("the rainy night: forced truths wear badges, revision releases one", async ({ page }) => {
+  await openGallery(page, "The rainy night");
+  await expect(
+    rowOf(page, "the ground is wet").getByText("⊨ true", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    rowOf(page, "the garden path is safe").getByText("⊨ false", { exact: true }),
+  ).toBeVisible();
+
+  // Click the forced-false statement; the inspector must offer the prices
+  // of believing it anyway — one per link of the rain→wet→slippery chain.
+  const inspector = page.locator(".card", { hasText: "Inspector" });
+  await expect(async () => {
+    if ((await inspector.getByText("Believe otherwise").count()) === 0) {
+      await rowOf(page, "the garden path is safe").click({ position: { x: 8, y: 8 } });
+    }
+    expect(await inspector.getByText("Believe otherwise").count()).toBeGreaterThan(0);
+  }).toPass({ timeout: 15_000 });
+  await expect(inspector.locator(".retraction")).toHaveCount(4);
+});

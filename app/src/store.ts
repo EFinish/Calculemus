@@ -289,6 +289,8 @@ import crocodile from "../../examples/carrolls-crocodile.json";
 import impostors from "../../examples/ponens-and-impostors.json";
 import unicorns from "../../examples/unicorn-problem.json";
 import barber from "../../examples/russells-barber.json";
+import moods from "../../examples/fifteen-moods.json";
+import rainyNight from "../../examples/rainy-night.json";
 
 export const EXAMPLES: { name: string; universe: Universe }[] = [
   { name: "The child and the ball", universe: childBall as unknown as Universe },
@@ -297,6 +299,8 @@ export const EXAMPLES: { name: string; universe: Universe }[] = [
   { name: "Ponens and impostors", universe: impostors as unknown as Universe },
   { name: "The unicorn problem", universe: unicorns as unknown as Universe },
   { name: "Russell's barber", universe: barber as unknown as Universe },
+  { name: "The fifteen moods", universe: moods as unknown as Universe },
+  { name: "The rainy night", universe: rainyNight as unknown as Universe },
 ];
 
 export function loadExample(name: string): void {

@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "title": "The rainy night",
+  "statements": [
+    { "id": "s1", "text": "it rained in the night" },
+    { "id": "s2", "text": "the ground is wet" },
+    { "id": "s3", "text": "the garden path is slippery" },
+    { "id": "s4", "text": "the garden path is safe" }
+  ],
+  "formulas": [
+    { "id": "f1", "op": "IMPLIES", "args": ["s1", "s2"] },
+    { "id": "f2", "op": "IMPLIES", "args": ["s2", "s3"] },
+    { "id": "f3", "op": "NOT", "args": ["s4"] },
+    { "id": "f4", "op": "IMPLIES", "args": ["s3", "f3"] }
+  ],
+  "assertions": [
+    { "formula": "s1", "active": true, "source": "hand" },
+    { "formula": "f1", "active": true, "source": "hand" },
+    { "formula": "f2", "active": true, "source": "hand" },
+    { "formula": "f4", "active": true, "source": "hand" }
+  ]
+}
