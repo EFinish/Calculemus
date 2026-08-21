@@ -3,6 +3,7 @@ import {
   F_RED,
   addArgument,
   headerBadge,
+  inspect,
   openWithBallUniverse,
   rowOf,
   setAssert,
@@ -50,9 +51,8 @@ test("invalid argument shows its countermodel in the inspector", async ({ page }
   const row = rowOf(page, "Affirming the consequent");
   await expect(row.getByText("invalid", { exact: true })).toBeVisible();
 
-  await row.click();
+  await inspect(page, "Affirming the consequent", "every premise holds and the conclusion fails");
   const inspector = page.locator(".card", { hasText: "Inspector" });
-  await expect(inspector.getByText("every premise holds and the conclusion fails")).toBeVisible();
   const countermodel = inspector.locator(".countermodel");
   // The witness world: play true, red false (premises hold, conclusion fails).
   await expect(
@@ -67,14 +67,12 @@ test("inspector explains truth states and vacuous conditionals", async ({ page }
   await openWithBallUniverse(page);
 
   // Entailed-false statement: blue (modus tollens).
-  await rowOf(page, "all of the ball is blue").click();
+  await inspect(page, "all of the ball is blue", "force this false");
   const inspector = page.locator(".card", { hasText: "Inspector" });
-  await expect(inspector.getByText("force this false")).toBeVisible();
   await expect(inspector.getByText("Used by")).toBeVisible();
 
   // Vacuous conditional: blue→¬play, explained.
-  await rowOf(page, "(all of the ball is blue IMPLIES").click();
-  await expect(inspector.getByText("holds only vacuously")).toBeVisible();
+  await inspect(page, "(all of the ball is blue IMPLIES", "holds only vacuously");
 
   // Valid argument: no-countermodel explanation, and its chains listed.
   await addArgument(
@@ -89,7 +87,6 @@ test("inspector explains truth states and vacuous conditionals", async ({ page }
     ["all of the time to play is now"],
     "all of the time to play is now",
   );
-  await rowOf(page, "Is it time to play?").click();
-  await expect(inspector.getByText("No countermodel exists")).toBeVisible();
+  await inspect(page, "Is it time to play?", "No countermodel exists");
   await expect(inspector.getByText("feeds")).toBeVisible();
 });

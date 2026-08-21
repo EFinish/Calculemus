@@ -29,8 +29,11 @@ export default defineConfig({
     },
     {
       // The sharing server, reached through vite's /api proxy. Static
-      // serving disabled — the app comes from vite here.
-      command: 'go run ./server -addr :8737 -data .e2e-data -dist ""',
+      // serving disabled — the app comes from vite here. Built then exec'd
+      // (not `go run`) so the process Playwright kills IS the listener —
+      // a lingering `go run` child once handed a dying port to the next run.
+      command:
+        "sh -c 'go build -o .e2e-server ./server && exec ./.e2e-server -addr :8737 -data .e2e-data -dist \"\"'",
       cwd: "..",
       port: 8737,
       reuseExistingServer: true,

@@ -40,11 +40,16 @@ test("edge filters and canvas↔inspector selection sync", async ({ page }) => {
   await page.getByRole("checkbox", { name: "shares" }).check();
   await expect(page.locator(".vue-flow__edge.e-shares").first()).toBeVisible();
 
-  // Clicking a node selects it in the inspector.
-  await page.locator('.vue-flow__node[data-id="s2"]').click();
+  // Clicking a node selects it in the inspector (retry: canvas fit-view and
+  // verdict re-renders can move nodes under a coordinate click).
   const inspector = page.locator(".card", { hasText: "Inspector" });
+  await expect(async () => {
+    if ((await inspector.getByText("force this false").count()) === 0) {
+      await page.locator('.vue-flow__node[data-id="s2"]').click();
+    }
+    expect(await inspector.getByText("force this false").count()).toBeGreaterThan(0);
+  }).toPass({ timeout: 15_000 });
   await expect(inspector.getByText("all of the ball is blue", { exact: true })).toBeVisible();
-  await expect(inspector.getByText("force this false")).toBeVisible();
 });
 
 test("dragged layout persists in the document and survives reload", async ({ page }) => {

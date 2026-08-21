@@ -17,3 +17,4 @@ app-boolean/playwright-report/
 data/
 .e2e-data/
 .e2e-data-boolean/
+.e2e-server
