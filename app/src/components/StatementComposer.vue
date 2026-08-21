@@ -6,6 +6,7 @@
 import { computed, ref, watch } from "vue";
 import type { Quantifier, Statement } from "../types";
 import { universe, addStatement, updateStatement, editing } from "../store";
+import { statementText } from "../phrase";
 
 // "THE" marks an individual phrase; the rest are kind quantifiers.
 type PhraseMode = Quantifier | "THE";
@@ -56,36 +57,14 @@ function cancelEdit() {
 }
 const negated = computed(() => verbMode.value === "IS_NOT" || verbMode.value === "DOES_NOT");
 
-const PHRASE_WORDS: Record<PhraseMode, string> = {
-  ALL: "all of",
-  SOME: "some of",
-  NONE: "none of",
-  THE: "the",
-};
-
-function phraseText(mode: PhraseMode, name: string): string {
-  return `${PHRASE_WORDS[mode]} ${name.trim()}`;
-}
-
-const preview = computed(() => {
-  if (copulaAsVerb.value) return "";
-  if (!subject.value.trim() || !object.value.trim()) return "";
-  const subj = phraseText(subjectMode.value, subject.value);
-  if (!isVerb.value) {
-    return `${subj} ${negated.value ? "is not" : "is"} ${object.value.trim()}`;
-  }
-  if (!verb.value.trim()) return "";
-  const v = verb.value.trim();
-  // Third-person conjugation for base-form verbs ("throw" → "throws"); a verb
-  // already ending in s passes through, so "throws" doesn't become "throwss".
-  const verbPart = negated.value ? `does not ${v}` : v.endsWith("s") ? v : `${v}s`;
-  return `${subj} ${verbPart} ${phraseText(objectMode.value, object.value)}`;
-});
-
-function submit() {
-  if (!preview.value) return;
-  const s: Omit<Statement, "id"> = {
-    text: preview.value,
+// The fields the current composer state would produce — preview and submit
+// both derive from this, and statementText (shared with the discoveries
+// panel) is the single source of phrasing.
+const draft = computed<Omit<Statement, "id" | "text"> | null>(() => {
+  if (copulaAsVerb.value) return null;
+  if (!subject.value.trim() || !object.value.trim()) return null;
+  if (isVerb.value && !verb.value.trim()) return null;
+  const s: Omit<Statement, "id" | "text"> = {
     subject: subject.value.trim(),
     predicate: object.value.trim(),
     qualifier: negated.value ? "IS_NOT" : "IS",
@@ -97,6 +76,14 @@ function submit() {
     if (objectMode.value === "THE") s.objectIsIndividual = true;
     else s.objectQuantifier = objectMode.value;
   }
+  return s;
+});
+
+const preview = computed(() => (draft.value ? statementText(draft.value) : ""));
+
+function submit() {
+  if (!draft.value) return;
+  const s: Omit<Statement, "id"> = { ...draft.value, text: preview.value };
   if (editingStatement.value) {
     updateStatement(editingStatement.value.id, s);
     editing.value = null;

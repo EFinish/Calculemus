@@ -3,8 +3,17 @@
 // inspector. The full inspector (countermodels, per-selection context,
 // diagnosis guidance) is milestone M2.
 import { computed } from "vue";
-import { universe, verdicts, engineError, activeScenario, setAsserted } from "../store";
+import type { Statement } from "../types";
+import { universe, verdicts, engineError, activeScenario, setAsserted, addStatement, readOnly } from "../store";
 import { renderRef } from "../render";
+import { statementText } from "../phrase";
+
+// Adopt a discovery: it becomes a real (unasserted) statement, and stops
+// being proposed — its ⊨ badge moves into the library.
+function adopt(d: Statement) {
+  const { id: _id, text: _text, ...fields } = d;
+  addStatement({ ...fields, text: statementText(d) });
+}
 
 const argTitle = (id: string) =>
   (universe.arguments ?? []).find((a) => a.id === id)?.title ?? id;
@@ -34,6 +43,21 @@ const chains = computed(
           </div>
         </template>
         <p v-else class="muted small">Nothing is forced yet — assert some statements or formulas.</p>
+        <template v-if="(verdicts.discoveries ?? []).length > 0">
+          <h3 class="small muted">Discoveries — forced, though you never wrote them</h3>
+          <div v-for="(d, i) in verdicts.discoveries" :key="i" class="row small">
+            <span class="badge ok">⊨ true</span>
+            <span class="grow">{{ statementText(d) }}</span>
+            <button
+              v-if="!readOnly"
+              class="small"
+              title="Adopt as a statement in your universe"
+              @click="adopt(d)"
+            >
+              +
+            </button>
+          </div>
+        </template>
       </template>
       <template v-else>
         <p class="small">

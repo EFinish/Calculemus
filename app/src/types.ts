@@ -101,4 +101,5 @@ export interface Verdicts {
   arguments?: ArgumentVerdict[];
   edges?: Edge[];
   boundedDomain?: number;
+  discoveries?: Statement[];
 }

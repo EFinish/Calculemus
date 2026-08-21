@@ -52,9 +52,14 @@ type Verdicts struct {
 	EntailedFalse []string `json:"entailedFalse,omitempty"`
 	// Vacuous: IMPLIES formulas whose antecedent the assertions force false —
 	// true, but only vacuously (DESIGN.md §4.2). Empty when inconsistent.
-	Vacuous   []string          `json:"vacuous,omitempty"`
-	Arguments []ArgumentVerdict `json:"arguments,omitempty"`
-	Edges     []Edge            `json:"edges,omitempty"`
+	Vacuous []string `json:"vacuous,omitempty"`
+	// Discoveries: atomic statements over the existing vocabulary that the
+	// assertions force but nobody authored — proposals, adopted only by the
+	// user (id and text are left empty for the app to fill). Suppressed when
+	// inconsistent (§4.1).
+	Discoveries []Statement       `json:"discoveries,omitempty"`
+	Arguments   []ArgumentVerdict `json:"arguments,omitempty"`
+	Edges       []Edge            `json:"edges,omitempty"`
 	// BoundedDomain, when set, means relational (M6) semantics were in play:
 	// verdicts were checked over worlds with at most this many things.
 	// Countermodels found are absolute; "valid" is valid-up-to-this-bound.
@@ -97,13 +102,15 @@ func evaluate(u *Universe, toggles map[string]bool) (*Verdicts, error) {
 	if c.grounded != nil {
 		v.BoundedDomain = c.grounded.domain
 	}
-	v.Consistent, _ = c.sat(assume...)
+	var firstModel []bool
+	v.Consistent, firstModel = c.sat(assume...)
 
 	if v.Consistent {
+		e := newEntailer(c, assume, firstModel)
 		for _, s := range u.Statements {
-			if ok, _ := c.sat(append(slices.Clone(assume), -c.lit(s.ID))...); !ok {
+			if e.forcedTrue(c.lit(s.ID)) {
 				v.EntailedTrue = append(v.EntailedTrue, s.ID)
-			} else if ok, _ := c.sat(append(slices.Clone(assume), c.lit(s.ID))...); !ok {
+			} else if e.forcedFalse(c.lit(s.ID)) {
 				v.EntailedFalse = append(v.EntailedFalse, s.ID)
 			}
 		}
@@ -113,10 +120,11 @@ func evaluate(u *Universe, toggles map[string]bool) (*Verdicts, error) {
 				continue
 			}
 			// Antecedent forced false ⇒ the conditional holds vacuously.
-			if ok, _ := c.sat(append(slices.Clone(assume), c.lit(f.Args[0]))...); !ok {
+			if e.forcedFalse(c.lit(f.Args[0])) {
 				v.Vacuous = append(v.Vacuous, f.ID)
 			}
 		}
+		v.Discoveries = computeDiscoveries(u, active)
 	} else {
 		v.UnsatCore = minimizeCore(c, active)
 		for i := 0; i < len(v.UnsatCore); i++ {
