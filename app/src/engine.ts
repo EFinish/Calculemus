@@ -1,11 +1,18 @@
-// The one JS↔Go boundary (DESIGN.md §7): evaluate(universe) → verdicts.
-// Everything else in the app is rendering and editing.
-import type { Universe, Verdicts } from "./types";
+// The JS↔Go boundary (DESIGN.md §7, §12): evaluate(universe) → verdicts,
+// plus the on-demand revise(target) → retraction sets. Everything else in
+// the app is rendering and editing.
+import type { Revision, Universe, Verdicts } from "./types";
 
 declare global {
   // Defined by /wasm_exec.js (classic script in index.html).
   const Go: new () => { importObject: WebAssembly.Imports; run(i: WebAssembly.Instance): Promise<void> };
   function calculemusEvaluate(universeJSON: string, scenario: string): string;
+  function calculemusRevise(
+    universeJSON: string,
+    scenario: string,
+    target: string,
+    wantTrue: boolean,
+  ): string;
 }
 
 let booting: Promise<void> | null = null;
@@ -32,6 +39,20 @@ export async function evaluate(universe: Universe, scenario = ""): Promise<Verdi
   const result = JSON.parse(calculemusEvaluate(JSON.stringify(universe), scenario)) as
     | Verdicts
     | { error: string };
+  if ("error" in result) throw new Error(result.error);
+  return result;
+}
+
+export async function revise(
+  universe: Universe,
+  scenario: string,
+  target: string,
+  wantTrue: boolean,
+): Promise<Revision> {
+  await boot();
+  const result = JSON.parse(
+    calculemusRevise(JSON.stringify(universe), scenario, target, wantTrue),
+  ) as Revision | { error: string };
   if ("error" in result) throw new Error(result.error);
   return result;
 }

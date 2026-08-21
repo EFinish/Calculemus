@@ -10,7 +10,7 @@ import { Background } from "@vue-flow/background";
 import { universe, verdicts, selected, select, isAsserted, setLayout, clearLayout } from "../store";
 import { renderRef } from "../render";
 
-const filters = reactive({ shares: true, contradicts: true, chains: true });
+const filters = reactive({ shares: true, contradicts: true, chains: true, entails: true });
 
 function truthClass(id: string): string {
   if (verdicts.value?.unsatCore?.includes(id)) return "conflict";
@@ -83,6 +83,14 @@ const edges = computed<FlowEdge[]>(() =>
           };
         case "contradicts":
           return { id, source: e.from, target: e.to, class: "e-contradicts" };
+        case "entails":
+          return {
+            id,
+            source: e.from,
+            target: e.to,
+            markerEnd: MarkerType.ArrowClosed,
+            class: "e-entails",
+          };
         default:
           return { id, source: e.from, target: e.to, class: "e-shares" };
       }
@@ -105,6 +113,7 @@ function onNodeDragStop({ node }: NodeDragEvent) {
       <label class="small"><input v-model="filters.shares" type="checkbox" /> <span class="sw shares"></span>shares</label>
       <label class="small"><input v-model="filters.contradicts" type="checkbox" /> <span class="sw contradicts"></span>contradicts</label>
       <label class="small"><input v-model="filters.chains" type="checkbox" /> <span class="sw chains"></span>chains</label>
+      <label class="small"><input v-model="filters.entails" type="checkbox" /> <span class="sw entails"></span>entails</label>
       <span class="spacer"></span>
       <button class="small" title="Forget hand-placed positions" @click="clearLayout">Auto-arrange</button>
     </div>
@@ -165,6 +174,9 @@ function onNodeDragStop({ node }: NodeDragEvent) {
 }
 .sw.chains {
   background: var(--accent);
+}
+.sw.entails {
+  background: var(--true);
 }
 .flow-wrap {
   /* Explicit height, not min-height: VueFlow sizes itself with height:100%,
@@ -237,5 +249,9 @@ function onNodeDragStop({ node }: NodeDragEvent) {
 .vue-flow__edge.e-chains .vue-flow__edge-path {
   stroke: var(--accent);
   stroke-width: 2.5;
+}
+.vue-flow__edge.e-entails .vue-flow__edge-path {
+  stroke: var(--true);
+  stroke-width: 1.75;
 }
 </style>

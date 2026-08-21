@@ -77,7 +77,7 @@ export interface Universe {
   layout?: Record<string, Point>;
 }
 
-export type EdgeType = "shares" | "contradicts" | "chains";
+export type EdgeType = "shares" | "contradicts" | "chains" | "entails";
 
 export interface Edge {
   type: EdgeType;
@@ -90,6 +90,15 @@ export interface ArgumentVerdict {
   valid: boolean;
   form?: string;
   countermodel?: Record<string, boolean>;
+}
+
+// Belief revision (DESIGN.md §12): the prices of holding a target true or
+// false. Each retraction set is a minimal group of assertion refs to give up.
+export interface Revision {
+  possible: boolean;
+  alreadySatisfiable?: boolean;
+  retractions?: string[][];
+  boundedDomain?: number;
 }
 
 export interface Verdicts {

@@ -4,8 +4,18 @@
 // their assertion state and vacuousness explained; arguments get their
 // verdict — and, when invalid, the concrete countermodel: a world where
 // every premise holds and the conclusion fails.
-import { computed } from "vue";
-import { universe, verdicts, selected, isAsserted, referencedBy } from "../store";
+import { computed, ref, watchEffect } from "vue";
+import type { Revision } from "../types";
+import {
+  universe,
+  verdicts,
+  selected,
+  isAsserted,
+  referencedBy,
+  readOnly,
+  requestRevision,
+  applyRetraction,
+} from "../store";
 import { renderRef } from "../render";
 
 const statement = computed(() =>
@@ -28,6 +38,29 @@ const truthState = computed((): TruthState => {
 });
 
 const usedBy = computed(() => referencedBy(selected.value!));
+
+// Belief revision (DESIGN.md §12): when the assertions force this statement,
+// offer the prices of believing otherwise. Fetched on demand per selection;
+// the token guards against a slow answer landing on a newer selection.
+const revision = ref<Revision | null>(null);
+let revisionToken = 0;
+watchEffect(() => {
+  revision.value = null;
+  const id = statement.value?.id;
+  const forced = truthState.value === "entailed-true" || truthState.value === "entailed-false";
+  // Touch verdicts so retraction results refresh after each re-evaluate.
+  if (!id || !forced || !verdicts.value?.consistent) return;
+  const wantTrue = truthState.value === "entailed-false";
+  const token = ++revisionToken;
+  requestRevision(id, wantTrue).then(
+    (r) => {
+      if (token === revisionToken && selected.value === id) revision.value = r;
+    },
+    () => {}, // engine error already surfaces via the verdict path
+  );
+});
+const retractionLabel = (ref_: string) =>
+  universe.statements.find((s) => s.id === ref_)?.text ?? renderRef(universe, ref_);
 
 const argVerdict = computed(() =>
   verdicts.value?.arguments?.find((v) => v.id === selected.value),
@@ -74,6 +107,28 @@ const argTitle = (id: string) =>
           }}
         </span>
       </p>
+
+      <template v-if="revision?.retractions?.length">
+        <h3 class="small muted">Believe otherwise</h3>
+        <p class="muted small">
+          To hold this {{ truthState === "entailed-true" ? "false" : "true" }} instead,
+          give up {{ revision.retractions.length > 1 ? "one of these sets" : "this" }}:
+        </p>
+        <div v-for="(set, i) in revision.retractions" :key="i" class="retraction small">
+          <span class="rset">{{ set.map(retractionLabel).join(" + ") }}</span>
+          <button
+            class="small"
+            :disabled="readOnly"
+            :title="readOnly ? 'Read-only view' : 'Unassert these'"
+            @click="applyRetraction(set)"
+          >
+            give up
+          </button>
+        </div>
+        <p class="muted small">
+          The logic never retracts — you do. Each set is a minimal price; the choice is yours.
+        </p>
+      </template>
     </template>
 
     <template v-else-if="formula">
@@ -195,5 +250,16 @@ p {
 .chain {
   color: var(--accent);
   font-weight: 600;
+}
+.retraction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.rset {
+  flex: 1;
 }
 </style>

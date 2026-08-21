@@ -19,7 +19,7 @@ make wasm                              # build engine → app*/public/ (REQUIRED
 make smoke                             # wasm + Node smoke test of the bridge
 make dev                               # wasm + vite dev server (app at localhost:5173)
 make e2e                               # wasm + full Playwright suite, headless Firefox
-cd app && npx playwright test m6       # one e2e spec file (also: gallery, editing, discoveries, m1–m5)
+cd app && npx playwright test m6       # one e2e spec file (also: gallery, editing, discoveries, revision, m1–m5)
 cd app && npm run typecheck            # vue-tsc
 make build                             # tests + wasm + both app builds
 make serve                             # production: one Go binary serving both editions + /api on :8737
@@ -48,9 +48,11 @@ all reasoning lives in `core/` and reaches the browser as WASM.
   "valid" means valid-up-to-bound). `entailer.go` (model-pool pruning) and
   `discoveries.go` (saturation: propose entailed-but-unauthored statements)
   sit on top; `forms.go` is decorative labeling only.
-- **`wasm/`** — the entire JS↔Go surface is one call:
-  `calculemusEvaluate(universeJSON, scenario) → verdictsJSON`. Errors return
-  as `{"error": ...}`, never thrown.
+- **`wasm/`** — the JS↔Go surface is two calls:
+  `calculemusEvaluate(universeJSON, scenario) → verdictsJSON` (recurring) and
+  `calculemusRevise(universeJSON, scenario, target, wantTrue) → revisionJSON`
+  (on-demand belief revision, DESIGN §12). Errors return as `{"error": ...}`,
+  never thrown.
 - **`app/`** — Vue 3 + vue-flow. `src/store.ts` is the heart: one reactive
   Universe, persisted to localStorage **synchronously on every change**
   (only engine evaluation is debounced — a debounced save loses the last

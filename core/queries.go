@@ -15,6 +15,11 @@ const (
 	// EdgeChains: the From argument's conclusion entails a premise of the To
 	// argument — arguments composing into larger proofs.
 	EdgeChains EdgeType = "chains"
+	// EdgeEntails: the From statement/formula alone forces the To one (§5
+	// as-built). Trivial sources (self-contradictions) and targets
+	// (tautologies) are skipped, equivalents collapsed, and the set
+	// transitively reduced — the Hasse skeleton, not the closure.
+	EdgeEntails EdgeType = "entails"
 )
 
 type Edge struct {
@@ -158,7 +163,101 @@ func evaluate(u *Universe, toggles map[string]bool) (*Verdicts, error) {
 
 	v.Edges = append(v.Edges, sharesEdges(ix)...)
 	v.Edges = append(v.Edges, chainsEdges(u, c)...)
+	v.Edges = append(v.Edges, entailsEdges(u, c)...)
 	return v, nil
+}
+
+// entailsEdges computes pairwise entailment between authored statements and
+// formulas: X ⊨ Y iff (X ∧ ¬Y) is unsatisfiable. Assertion-independent, like
+// argument validity. A model pool prunes most pairs without solver calls: any
+// model where X holds and Y fails is a witness that X ⊭ Y.
+func entailsEdges(u *Universe, c *compiled) []Edge {
+	var ids []string
+	for _, s := range u.Statements {
+		ids = append(ids, s.ID)
+	}
+	for _, f := range u.Formulas {
+		ids = append(ids, f.ID)
+	}
+	n := len(ids)
+	if n < 2 {
+		return nil
+	}
+
+	var pool [][]bool
+	refuted := func(x, y int) bool { // pool model with x true, y false?
+		for _, m := range pool {
+			if m[x] && !m[y] {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Trivial nodes say nothing: an unsatisfiable X entails everything, a
+	// tautological Y is entailed by everything.
+	lit := make([]int, n)
+	ok := make([]bool, n)
+	for i, id := range ids {
+		lit[i] = c.lit(id)
+		if sat, m := c.sat(lit[i]); sat {
+			if sat2, m2 := c.sat(-lit[i]); sat2 {
+				ok[i] = true
+				pool = append(pool, m, m2)
+			}
+		}
+	}
+
+	ent := make([][]bool, n)
+	for i := range ent {
+		ent[i] = make([]bool, n)
+		if !ok[i] {
+			continue
+		}
+		for j := range ent[i] {
+			if i == j || !ok[j] || refuted(lit[i], lit[j]) {
+				continue
+			}
+			sat, m := c.sat(lit[i], -lit[j])
+			if sat {
+				pool = append(pool, m)
+			} else {
+				ent[i][j] = true
+			}
+		}
+	}
+
+	// Collapse mutual entailment to one representative (first in id order) so
+	// equivalent items don't spray edges; then transitively reduce.
+	rep := make([]int, n)
+	for i := range rep {
+		rep[i] = i
+		for j := 0; j < i; j++ {
+			if ent[i][j] && ent[j][i] {
+				rep[i] = rep[j]
+				break
+			}
+		}
+	}
+	var edges []Edge
+	for i := 0; i < n; i++ {
+		if rep[i] != i {
+			continue
+		}
+		for j := 0; j < n; j++ {
+			if rep[j] != j || !ent[i][j] {
+				continue
+			}
+			redundant := false
+			for k := 0; k < n && !redundant; k++ {
+				redundant = rep[k] == k && k != i && k != j && ent[i][k] && ent[k][j]
+			}
+			if !redundant {
+				edges = append(edges, Edge{EdgeEntails, ids[i], ids[j]})
+			}
+		}
+	}
+	return edges
 }
 
 // activeAssertions resolves toggles over the assertion list and returns the
@@ -200,14 +299,16 @@ func activeAssertions(u *Universe, toggles map[string]bool) []string {
 
 // minimizeCore shrinks an unsatisfiable assertion set to a minimal one by
 // deletion: drop each member in turn and keep the drop whenever the rest is
-// still unsatisfiable. Every remaining member is then necessary.
-func minimizeCore(c *compiled, active []string) []string {
+// still unsatisfiable. Every remaining member is then necessary. The hard
+// literals are never candidates for deletion (revision holds its target
+// fixed while shrinking the assertions around it).
+func minimizeCore(c *compiled, active []string, hard ...int) []string {
 	core := slices.Clone(active)
 	for i := 0; i < len(core); {
 		trial := slices.Concat(core[:i], core[i+1:])
-		lits := make([]int, len(trial))
-		for j, ref := range trial {
-			lits[j] = c.lit(ref)
+		lits := slices.Clone(hard)
+		for _, ref := range trial {
+			lits = append(lits, c.lit(ref))
 		}
 		if ok, _ := c.sat(lits...); !ok {
 			core = trial

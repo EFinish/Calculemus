@@ -3,8 +3,8 @@
 // Guardrail R2: nothing exists until it persists — persistence is here, in
 // the first milestone, not a future feature.
 import { reactive, ref, watch } from "vue";
-import type { Argument, Formula, Op, Statement, Universe, Verdicts } from "./types";
-import { evaluate } from "./engine";
+import type { Argument, Formula, Op, Revision, Statement, Universe, Verdicts } from "./types";
+import { evaluate, revise } from "./engine";
 
 // v2 key: the frozen Boolean edition keeps "calculemus.universe" untouched.
 const STORAGE_KEY = "calculemus.v2.universe";
@@ -183,6 +183,19 @@ export function setAsserted(ref: string, on: boolean): void {
   } else if (existing) {
     list.splice(list.indexOf(existing), 1);
   }
+}
+
+// Belief revision (§12): ask the engine what holding `target` at `wantTrue`
+// would cost under the current scenario. On-demand — the inspector calls it
+// only for a forced statement, never on every evaluate.
+export function requestRevision(target: string, wantTrue: boolean): Promise<Revision> {
+  return revise(universe, activeScenario.value, target, wantTrue);
+}
+
+// applyRetraction pays one of the offered prices: give up every assertion in
+// the set. Goes through setAsserted so scenarios shadow the base as usual.
+export function applyRetraction(refs: string[]): void {
+  for (const ref of refs) setAsserted(ref, false);
 }
 
 export function addScenario(name: string): string {
