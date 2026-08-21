@@ -11,13 +11,16 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"flag"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	webdist "github.com/EFinish/Calculemus"
 	"github.com/EFinish/Calculemus/core"
 )
 
@@ -38,16 +41,27 @@ func main() {
 	}
 	s := &server{dataDir: *dataDir}
 
+	// Release binaries (built with -tags dist) carry the apps inside them; an
+	// explicit -dist/-boolean-dist flag still wins so a newer build on disk
+	// can be served without recompiling.
+	explicit := map[string]bool{}
+	flag.Visit(func(f *flag.Flag) { explicit[f.Name] = true })
+	appFS := pickDist(webdist.App(), *distDir, explicit["dist"])
+	booleanFS := pickDist(webdist.Boolean(), *booleanDist, explicit["boolean-dist"])
+	if webdist.Embedded && appFS != nil && !explicit["dist"] {
+		log.Printf("serving embedded web apps")
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/universes", s.publish)
 	mux.HandleFunc("GET /api/universes/{id}", s.fetch)
-	if *booleanDist != "" {
+	if booleanFS != nil {
 		// The frozen edition is built with a relative base and shares via
 		// query params, so plain file serving suffices — no SPA fallback.
-		mux.Handle("GET /boolean/", http.StripPrefix("/boolean/", http.FileServer(http.Dir(*booleanDist))))
+		mux.Handle("GET /boolean/", http.StripPrefix("/boolean/", http.FileServerFS(booleanFS)))
 	}
-	if *distDir != "" {
-		mux.Handle("GET /", spaHandler(*distDir))
+	if appFS != nil {
+		mux.Handle("GET /", spaHandler(appFS))
 	}
 
 	log.Printf("calculemus server on %s (data: %s)", *addr, *dataDir)
@@ -112,17 +126,30 @@ func (s *server) fetch(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
+// pickDist chooses between an embedded app and a directory on disk. An
+// explicitly passed flag always wins; otherwise the embedded copy (when this
+// binary carries one) beats the default disk path. Empty dir disables.
+func pickDist(embedded fs.FS, dir string, explicitFlag bool) fs.FS {
+	if embedded != nil && !explicitFlag {
+		return embedded
+	}
+	if dir == "" {
+		return nil
+	}
+	return os.DirFS(dir)
+}
+
 // spaHandler serves the built app, falling back to index.html for the /u/…
 // share routes (the app itself resolves the id client-side).
-func spaHandler(dist string) http.Handler {
-	fs := http.FileServer(http.Dir(dist))
+func spaHandler(dist fs.FS) http.Handler {
+	files := http.FileServerFS(dist)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clean := filepath.Clean(r.URL.Path)
+		clean := path.Clean(r.URL.Path)
 		if strings.HasPrefix(clean, "/u/") || clean == "/u" {
-			http.ServeFile(w, r, filepath.Join(dist, "index.html"))
+			http.ServeFileFS(w, r, dist, "index.html")
 			return
 		}
-		fs.ServeHTTP(w, r)
+		files.ServeHTTP(w, r)
 	})
 }
 

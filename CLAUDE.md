@@ -23,6 +23,7 @@ cd app && npx playwright test m6       # one e2e spec file (also: gallery, editi
 cd app && npm run typecheck            # vue-tsc
 make build                             # tests + wasm + both app builds
 make serve                             # production: one Go binary serving both editions + /api on :8737
+make release                           # self-contained binary (apps embedded via -tags dist; webdist.go)
 ./run.sh                               # CLI demo; go run ./cmd/calculemus examples/<name>.json evaluates any universe
 ```
 

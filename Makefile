@@ -4,7 +4,7 @@
 
 GOROOT := $(shell go env GOROOT)
 
-.PHONY: test wasm smoke dev build e2e e2e-boolean serve
+.PHONY: test wasm smoke dev build e2e e2e-boolean serve release
 
 test:
 	go test ./...
@@ -40,3 +40,8 @@ e2e-boolean: wasm
 # everything — the app, and the /api document store for shared universes.
 serve: build
 	go run ./server -addr :8737 -data data -dist app/dist -boolean-dist app-boolean/dist
+
+# Self-contained binary: both built apps embedded via the "dist" build tag
+# (webdist.go). CI cross-compiles this same thing for tagged releases.
+release: build
+	go build -tags dist -trimpath -ldflags "-s -w" -o calculemus ./server

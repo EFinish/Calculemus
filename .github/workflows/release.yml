@@ -1,0 +1,62 @@
+# Tagged releases: push a v* tag and this builds self-contained binaries
+# (apps embedded via the "dist" build tag), attests their provenance, and
+# publishes them. No laptop-built binaries ever reach the release page —
+# users can verify with: gh attestation verify <file> --repo EFinish/Calculemus
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the release
+  id-token: write # sign the provenance attestation
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Engine and server tests
+        run: go test ./...
+
+      - name: Build WASM engine
+        run: make wasm
+
+      - name: Build web apps
+        run: |
+          (cd app && npm ci && npm run build)
+          (cd app-boolean && npm ci && npm run build)
+
+      - name: Cross-compile release binaries
+        run: |
+          mkdir -p release
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            os=${target%/*} arch=${target#*/}
+            out="release/calculemus-${GITHUB_REF_NAME}-${os}-${arch}"
+            [ "$os" = windows ] && out="$out.exe"
+            GOOS=$os GOARCH=$arch CGO_ENABLED=0 \
+              go build -tags dist -trimpath -ldflags "-s -w" -o "$out" ./server
+          done
+          (cd release && sha256sum * > SHA256SUMS)
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release/calculemus-*
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
