@@ -139,3 +139,14 @@ test("'is' typed as a verb is refused and redirected to the copula", async ({ pa
   await page.getByRole("button", { name: "Add statement" }).click();
   await expect(page.locator(".row", { hasText: "the ball is red" }).first()).toBeVisible();
 });
+
+test("already-conjugated verbs are not double-conjugated", async ({ page }) => {
+  await openEmpty(page);
+  await page.getByLabel("Quantifier", { exact: true }).selectOption("THE");
+  await page.getByLabel("Subject").fill("child");
+  await page.getByLabel("Qualifier").selectOption("DOES");
+  await page.getByLabel("Verb").fill("throws");
+  await page.getByLabel("Object quantifier").selectOption("SOME");
+  await page.getByLabel("Predicate").fill("object");
+  await expect(page.getByText("“the child throws some of object”")).toBeVisible();
+});

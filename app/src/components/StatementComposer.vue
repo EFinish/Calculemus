@@ -75,7 +75,10 @@ const preview = computed(() => {
     return `${subj} ${negated.value ? "is not" : "is"} ${object.value.trim()}`;
   }
   if (!verb.value.trim()) return "";
-  const verbPart = negated.value ? `does not ${verb.value.trim()}` : `${verb.value.trim()}s`;
+  const v = verb.value.trim();
+  // Third-person conjugation for base-form verbs ("throw" → "throws"); a verb
+  // already ending in s passes through, so "throws" doesn't become "throwss".
+  const verbPart = negated.value ? `does not ${v}` : v.endsWith("s") ? v : `${v}s`;
   return `${subj} ${verbPart} ${phraseText(objectMode.value, object.value)}`;
 });
 
