@@ -99,6 +99,12 @@ function submit() {
     />
     <button class="primary" type="submit" :disabled="!preview">Add statement</button>
     <span v-if="preview" class="muted small preview">“{{ preview }}”</span>
+    <span class="muted small hint">
+      Tip: pick <strong>the</strong> and <strong>does…</strong> for relational statements —
+      then the engine can connect the object of one statement to the subject of another
+      (“the boy throws <em>the ball</em>” + “<em>the ball</em> is red” derives
+      “the boy throws some of red”).
+    </span>
   </form>
 </template>
 
@@ -118,5 +124,9 @@ function submit() {
 }
 .preview {
   flex-basis: 100%;
+}
+.hint {
+  flex-basis: 100%;
+  opacity: 0.85;
 }
 </style>

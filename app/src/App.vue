@@ -14,6 +14,7 @@ import {
   shareUniverse,
   loadShared,
   copyToWorkspace,
+  loadExample,
 } from "./store";
 import LibraryPane from "./components/LibraryPane.vue";
 import CanvasPane from "./components/CanvasPane.vue";
@@ -52,6 +53,16 @@ function onNew() {
   if (window.confirm("Start a new universe? The current one is only kept if you exported it.")) {
     resetUniverse();
   }
+}
+
+function onExample() {
+  if (
+    universe.statements.length > 0 &&
+    !window.confirm("Replace the current universe with the example? It is only kept if you exported it.")
+  ) {
+    return;
+  }
+  loadExample();
 }
 
 function onNewScenario() {
@@ -101,6 +112,12 @@ function onDeleteScenario() {
     <button v-if="readOnly" class="primary" @click="copyToWorkspace">Copy to my workspace</button>
     <template v-else>
       <button @click="onNew">New</button>
+      <button
+        title="Load the Frege-step example: two asserted facts, one derived conclusion, no conditionals"
+        @click="onExample"
+      >
+        Example
+      </button>
       <button title="Publish an immutable snapshot and get a link anyone can open" @click="onShare">Share</button>
       <button @click="exportUniverse">Export</button>
       <button @click="fileInput?.click()">Import</button>

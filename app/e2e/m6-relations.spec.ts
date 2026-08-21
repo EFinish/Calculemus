@@ -97,3 +97,26 @@ test("quantified verbs: all men throw some ball, socrates is a man", async ({ pa
     rowOf(page, "Socrates plays too").getByText("valid", { exact: true }),
   ).toBeVisible();
 });
+
+test("the Example button loads the Frege universe ready to explore", async ({ page }) => {
+  await openEmpty(page);
+  await page.getByRole("button", { name: "Example" }).click();
+  await expect(page.getByLabel("Universe title")).toHaveValue("The Frege step");
+  await expect(headerBadge(page)).toHaveText("consistent");
+  await expect(
+    rowOf(page, "the boy throws some of red").getByText("⊨ true", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    rowOf(page, "The Frege step").getByText("valid", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("worlds ≤ 6 things")).toBeVisible();
+
+  // The bundled counterfactual: assert throws-none-red → contradiction.
+  await page.getByLabel("Scenario").selectOption("throws nothing red");
+  await expect(headerBadge(page)).toHaveText("contradictory");
+
+  // Replacing a non-empty universe asks first.
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Example" }).click();
+  await expect(page.getByLabel("Universe title")).toHaveValue("The Frege step");
+});

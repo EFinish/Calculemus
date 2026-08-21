@@ -213,6 +213,43 @@ export function exportUniverse(): void {
   URL.revokeObjectURL(a.href);
 }
 
+// ---- built-in example --------------------------------------------------------
+
+// The Frege-step example (DESIGN §11, mirrored in examples/frege.json):
+// two asserted facts, one derived — with no conditional anywhere. The fastest
+// way to see what relational statements do.
+const FREGE_EXAMPLE: Universe = {
+  version: 2,
+  title: "The Frege step",
+  statements: [
+    { id: "s_throws", text: "the boy throws the ball", subject: "the boy",
+      subjectIsIndividual: true, qualifier: "IS", verb: "throw",
+      predicate: "the ball", objectIsIndividual: true },
+    { id: "s_red", text: "the ball is red", subject: "the ball",
+      subjectIsIndividual: true, qualifier: "IS", predicate: "red" },
+    { id: "s_some_red", text: "the boy throws some of red", subject: "the boy",
+      subjectIsIndividual: true, qualifier: "IS", verb: "throw",
+      predicate: "red", objectQuantifier: "SOME" },
+    { id: "s_none_red", text: "the boy throws none of red", subject: "the boy",
+      subjectIsIndividual: true, qualifier: "IS", verb: "throw",
+      predicate: "red", objectQuantifier: "NONE" },
+  ],
+  assertions: [
+    { formula: "s_throws", active: true, source: "hand" },
+    { formula: "s_red", active: true, source: "hand" },
+  ],
+  arguments: [
+    { id: "a_frege", title: "The Frege step",
+      premises: ["s_throws", "s_red"], conclusion: "s_some_red" },
+  ],
+  scenarios: [{ name: "throws nothing red", toggles: { s_none_red: true } }],
+};
+
+export function loadExample(): void {
+  resetUniverse();
+  Object.assign(universe, structuredClone(FREGE_EXAMPLE));
+}
+
 // ---- sharing (M5) -----------------------------------------------------------
 
 // shareUniverse publishes an immutable snapshot and returns its share URL.
