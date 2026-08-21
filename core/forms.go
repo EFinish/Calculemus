@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 // Named-form annotation — the demotion promised in DESIGN §4: worldview-
 // mapper's 983-line pattern-matching engine, reborn as a few dozen lines of
 // purely decorative labeling. Matching is syntactic and strict; verdicts
@@ -68,36 +70,85 @@ func isNotRef(ix *index, id string, ref string) bool {
 	return isNotOf(ix.form[id], ref)
 }
 
-// classifySyllogism recognizes Barbara (AAA-1), the syllogism of syllogisms:
-// all M are P, all S are M ⊢ all S are P — from term structure alone.
+// syllogismNames: figure+mood → traditional name, Boolean-valid moods only.
+// The nine that need existential import (Darapti, Felapton, Bamalip, Fesapo,
+// and the subalterns) are absent by design — under the Boolean reading those
+// arguments are invalid, so classifyForm never sees them anyway.
+var syllogismNames = map[string]string{
+	"1AAA": "Barbara", "1EAE": "Celarent", "1AII": "Darii", "1EIO": "Ferio",
+	"2EAE": "Cesare", "2AEE": "Camestres", "2EIO": "Festino", "2AOO": "Baroco",
+	"3IAI": "Disamis", "3AII": "Datisi", "3OAO": "Bocardo", "3EIO": "Ferison",
+	"4AEE": "Calemes", "4IAI": "Dimatis", "4EIO": "Fresison",
+}
+
+// classifySyllogism names a categorical syllogism by figure and mood: the
+// conclusion fixes S and P, the shared middle term M and its position pick
+// the figure, and the three form letters spell the mood. Matching stays
+// positional ("some M are P" and "some P are M" classify differently even
+// though they mean the same) — strictness over cleverness, per the header.
 func classifySyllogism(ix *index, arg *Argument) string {
 	if len(arg.Premises) != 2 {
 		return ""
 	}
-	a := aForm(ix, arg.Premises[0])
-	b := aForm(ix, arg.Premises[1])
-	c := aForm(ix, arg.Conclusion)
-	if a == nil || b == nil || c == nil {
+	concl := catForm(ix, arg.Conclusion)
+	if concl == nil {
 		return ""
 	}
-	for _, pair := range [][2]*[2]string{{a, b}, {b, a}} {
-		major, minor := pair[0], pair[1]
-		// major: M→P, minor: S→M, conclusion: S→P
-		if minor[1] == major[0] && c[0] == minor[0] && c[1] == major[1] {
-			return "Barbara"
+	s, p := concl.subj, concl.pred
+	if s == p {
+		return ""
+	}
+	for _, order := range [][2]string{
+		{arg.Premises[0], arg.Premises[1]},
+		{arg.Premises[1], arg.Premises[0]},
+	} {
+		major, minor := catForm(ix, order[0]), catForm(ix, order[1])
+		if major == nil || minor == nil {
+			continue
+		}
+		figure := 0
+		switch {
+		case major.subj != s && major.subj != p && major.pred == p &&
+			minor.subj == s && minor.pred == major.subj:
+			figure = 1 // M-P, S-M
+		case major.subj == p && major.pred != s && major.pred != p &&
+			minor.subj == s && minor.pred == major.pred:
+			figure = 2 // P-M, S-M
+		case major.subj != s && major.subj != p && major.pred == p &&
+			minor.subj == major.subj && minor.pred == s:
+			figure = 3 // M-P, M-S
+		case major.subj == p && major.pred != s && major.pred != p &&
+			minor.subj == major.pred && minor.pred == s:
+			figure = 4 // P-M, M-S
+		default:
+			continue
+		}
+		key := fmt.Sprintf("%d%c%c%c", figure, formLetter(major.form),
+			formLetter(minor.form), formLetter(concl.form))
+		if name := syllogismNames[key]; name != "" {
+			return name
 		}
 	}
 	return ""
 }
 
-// aForm returns [subjectTerm, predicateTerm] when the ref is an A-form
-// structured statement, else nil.
-func aForm(ix *index, id string) *[2]string {
+type catStmt struct {
+	form       syllogisticForm
+	subj, pred string
+}
+
+// catForm returns a statement's categorical shape, or nil when the ref is
+// not a structured copular statement. Relational statements are excluded:
+// formOf ignores the verb, and "all men THROW balls" is not a categorical
+// premise however it quantifies.
+func catForm(ix *index, id string) *catStmt {
 	s := ix.stmt[id]
-	// Relational statements are excluded: formOf ignores the verb, and
-	// "all men THROW balls" is not a Barbara premise however it quantifies.
-	if s == nil || relationalTrigger(s) || !structured(s) || formOf(s) != formA {
+	if s == nil || relationalTrigger(s) || !structured(s) {
 		return nil
 	}
-	return &[2]string{termKey(s.Subject), termKey(s.Predicate)}
+	return &catStmt{formOf(s), termKey(s.Subject), termKey(s.Predicate)}
+}
+
+func formLetter(f syllogisticForm) byte {
+	return [...]byte{formA: 'A', formE: 'E', formI: 'I', formO: 'O'}[f]
 }
