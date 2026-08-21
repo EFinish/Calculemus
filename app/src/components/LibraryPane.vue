@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { universe, verdicts, isAsserted, setAsserted, referencedBy, removeRef, select, selected, readOnly } from "../store";
+import { universe, verdicts, isAsserted, setAsserted, referencedBy, removeRef, select, selected, readOnly, editing } from "../store";
 import { renderRef } from "../render";
 import StatementComposer from "./StatementComposer.vue";
 import FormulaComposer from "./FormulaComposer.vue";
@@ -44,6 +44,7 @@ function deleteTitle(id: string): string {
         <span v-if="inCore(s.id)" class="badge bad">in conflict</span>
         <span v-else-if="truthOf(s.id) === 'true'" class="badge ok">⊨ true</span>
         <span v-else-if="truthOf(s.id) === 'false'" class="badge bad">⊨ false</span>
+        <button class="small" title="Edit" :disabled="readOnly" @click.stop="editing = s.id">✎</button>
         <button
           class="small"
           :disabled="readOnly || referencedBy(s.id).length > 0"
@@ -80,6 +81,7 @@ function deleteTitle(id: string): string {
         >
           vacuous
         </span>
+        <button class="small" title="Edit" :disabled="readOnly" @click.stop="editing = f.id">✎</button>
         <button
           class="small"
           :disabled="readOnly || referencedBy(f.id).length > 0"
@@ -119,6 +121,7 @@ function deleteTitle(id: string): string {
           valid
         </span>
         <span v-else-if="verdicts" class="badge bad">invalid</span>
+        <button class="small" title="Edit" :disabled="readOnly" @click.stop="editing = a.id">✎</button>
         <button class="small" title="Delete" :disabled="readOnly" @click.stop="removeRef(a.id)">✕</button>
       </div>
       <ArgumentComposer v-if="!readOnly" />

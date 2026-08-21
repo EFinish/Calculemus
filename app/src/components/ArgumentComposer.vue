@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { universe, addArgument } from "../store";
+import { computed, ref, watch } from "vue";
+import { universe, addArgument, updateArgument, editing } from "../store";
 import { renderRef } from "../render";
 
 const title = ref("");
@@ -11,6 +11,28 @@ const refs = computed(() => [
   ...universe.statements.map((s) => s.id),
   ...(universe.formulas ?? []).map((f) => f.id),
 ]);
+
+const editingArgument = computed(
+  () => (universe.arguments ?? []).find((a) => a.id === editing.value) ?? null,
+);
+
+watch(editingArgument, (a) => {
+  if (!a) return;
+  title.value = a.title;
+  premises.value = [...a.premises];
+  conclusion.value = a.conclusion;
+});
+
+function reset() {
+  title.value = "";
+  premises.value = [];
+  conclusion.value = "";
+}
+
+function cancelEdit() {
+  editing.value = null;
+  reset();
+}
 
 const complete = computed(
   () => title.value.trim() !== "" && premises.value.length > 0 && conclusion.value !== "",
@@ -24,15 +46,19 @@ function togglePremise(id: string, on: boolean) {
 
 function submit() {
   if (!complete.value) return;
-  addArgument(title.value.trim(), [...premises.value], conclusion.value);
-  title.value = "";
-  premises.value = [];
-  conclusion.value = "";
+  if (editingArgument.value) {
+    updateArgument(editingArgument.value.id, title.value.trim(), [...premises.value], conclusion.value);
+    editing.value = null;
+  } else {
+    addArgument(title.value.trim(), [...premises.value], conclusion.value);
+  }
+  reset();
 }
 </script>
 
 <template>
   <form v-if="refs.length >= 2" class="composer" @submit.prevent="submit">
+    <span v-if="editingArgument" class="small editing-note">Editing “{{ editingArgument.title }}”.</span>
     <input v-model="title" placeholder="argument title" aria-label="Argument title" />
     <fieldset>
       <legend class="muted small">premises</legend>
@@ -52,7 +78,12 @@ function submit() {
         <option v-for="r in refs" :key="r" :value="r">{{ renderRef(universe, r) }}</option>
       </select>
     </label>
-    <button class="primary" type="submit" :disabled="!complete">Add argument</button>
+    <span class="buttons">
+      <button class="primary" type="submit" :disabled="!complete">
+        {{ editingArgument ? "Save argument" : "Add argument" }}
+      </button>
+      <button v-if="editingArgument" type="button" @click="cancelEdit">Cancel</button>
+    </span>
   </form>
   <p v-else class="muted small">An argument needs at least two things to relate.</p>
 </template>
@@ -82,7 +113,11 @@ fieldset {
 .conclusion select {
   flex: 1;
 }
-button {
-  align-self: flex-start;
+.buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+.editing-note {
+  color: var(--accent);
 }
 </style>

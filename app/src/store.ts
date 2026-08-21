@@ -48,6 +48,12 @@ export const selected = ref<string | null>(null);
 // own saved universe is never clobbered.
 export const readOnly = ref(false);
 
+// Edit-in-place: the id of the statement, formula, or argument currently
+// being edited. Each composer reacts only to ids of its own kind. Ids never
+// change on save, so every reference to the edited item stays intact and the
+// derived web simply reflows.
+export const editing = ref<string | null>(null);
+
 export function select(id: string): void {
   selected.value = selected.value === id ? null : id;
 }
@@ -102,6 +108,51 @@ export function addFormula(op: Op, args: string[]): void {
 
 export function addArgument(title: string, premises: string[], conclusion: string): void {
   (universe.arguments ??= []).push({ id: nextId("a"), title, premises, conclusion });
+}
+
+export function updateStatement(id: string, fields: Omit<Statement, "id">): void {
+  const target = universe.statements.find((s) => s.id === id);
+  if (!target || readOnly.value) return;
+  // Clear the optional grammar fields first: switching a verb statement back
+  // to a copula must drop verb/object structure, and undefined keys vanish
+  // on serialization.
+  Object.assign(target, {
+    quantifier: undefined,
+    verb: undefined,
+    subjectIsIndividual: undefined,
+    objectIsIndividual: undefined,
+    objectQuantifier: undefined,
+    ...fields,
+  });
+}
+
+export function updateFormula(id: string, op: Op, args: string[]): void {
+  const target = (universe.formulas ?? []).find((f) => f.id === id);
+  if (!target || readOnly.value) return;
+  target.op = op;
+  target.args = args;
+}
+
+export function updateArgument(
+  id: string,
+  title: string,
+  premises: string[],
+  conclusion: string,
+): void {
+  const target = (universe.arguments ?? []).find((a) => a.id === id);
+  if (!target || readOnly.value) return;
+  target.title = title;
+  target.premises = premises;
+  target.conclusion = conclusion;
+}
+
+// reaches: whether `from` transitively references `target` through formula
+// arguments. Used to keep formula editing acyclic: while editing f, neither
+// f itself nor anything that reaches f may be picked as an argument.
+export function reaches(from: string, target: string): boolean {
+  if (from === target) return true;
+  const f = (universe.formulas ?? []).find((x) => x.id === from);
+  return f ? f.args.some((a) => reaches(a, target)) : false;
 }
 
 function currentScenario() {
@@ -170,6 +221,7 @@ export function referencedBy(id: string): string[] {
 export function removeRef(id: string): void {
   if (readOnly.value || referencedBy(id).length > 0) return;
   if (selected.value === id) selected.value = null;
+  if (editing.value === id) editing.value = null;
   universe.statements = spliceById(universe.statements, id);
   universe.formulas = spliceById(universe.formulas ?? [], id);
   universe.arguments = spliceById(universe.arguments ?? [], id);

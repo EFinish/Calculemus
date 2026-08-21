@@ -3,9 +3,9 @@
 // type raw logic. M6 grows the grammar one slot: subject phrase + verb +
 // object phrase. Defaults ("all of … is …") are exactly the pre-M6 copular
 // form, so nothing changes until you reach for "the" or a verb.
-import { computed, ref } from "vue";
-import type { Qualifier, Quantifier, Statement } from "../types";
-import { addStatement } from "../store";
+import { computed, ref, watch } from "vue";
+import type { Quantifier, Statement } from "../types";
+import { universe, addStatement, updateStatement, editing } from "../store";
 
 // "THE" marks an individual phrase; the rest are kind quantifiers.
 type PhraseMode = Quantifier | "THE";
@@ -19,6 +19,32 @@ const objectMode = ref<PhraseMode>("THE");
 const object = ref("");
 
 const isVerb = computed(() => verbMode.value === "DOES" || verbMode.value === "DOES_NOT");
+
+const editingStatement = computed(
+  () => universe.statements.find((s) => s.id === editing.value) ?? null,
+);
+
+watch(editingStatement, (s) => {
+  if (!s) return;
+  subjectMode.value = s.subjectIsIndividual ? "THE" : (s.quantifier ?? "ALL");
+  subject.value = s.subject ?? "";
+  const neg = s.qualifier === "IS_NOT";
+  verbMode.value = s.verb ? (neg ? "DOES_NOT" : "DOES") : neg ? "IS_NOT" : "IS";
+  verb.value = s.verb ?? "";
+  objectMode.value = s.objectIsIndividual ? "THE" : (s.objectQuantifier ?? "THE");
+  object.value = s.predicate ?? "";
+});
+
+function reset() {
+  subject.value = "";
+  object.value = "";
+  verb.value = "";
+}
+
+function cancelEdit() {
+  editing.value = null;
+  reset();
+}
 const negated = computed(() => verbMode.value === "IS_NOT" || verbMode.value === "DOES_NOT");
 
 const PHRASE_WORDS: Record<PhraseMode, string> = {
@@ -58,15 +84,21 @@ function submit() {
     if (objectMode.value === "THE") s.objectIsIndividual = true;
     else s.objectQuantifier = objectMode.value;
   }
-  addStatement(s);
-  subject.value = "";
-  object.value = "";
-  verb.value = "";
+  if (editingStatement.value) {
+    updateStatement(editingStatement.value.id, s);
+    editing.value = null;
+  } else {
+    addStatement(s);
+  }
+  reset();
 }
 </script>
 
 <template>
   <form class="composer" @submit.prevent="submit">
+    <span v-if="editingStatement" class="small editing-note">
+      Editing “{{ editingStatement.text }}” — every reference updates with it.
+    </span>
     <select v-model="subjectMode" aria-label="Quantifier">
       <option value="ALL">all of</option>
       <option value="SOME">some of</option>
@@ -97,7 +129,10 @@ function submit() {
       :placeholder="isVerb ? 'object — the ball' : 'predicate — red'"
       aria-label="Predicate"
     />
-    <button class="primary" type="submit" :disabled="!preview">Add statement</button>
+    <button class="primary" type="submit" :disabled="!preview">
+      {{ editingStatement ? "Save statement" : "Add statement" }}
+    </button>
+    <button v-if="editingStatement" type="button" @click="cancelEdit">Cancel</button>
     <span v-if="preview" class="muted small preview">“{{ preview }}”</span>
     <span class="muted small hint">
       Tip: pick <strong>the</strong> and <strong>does…</strong> for relational statements —
@@ -128,5 +163,9 @@ function submit() {
 .hint {
   flex-basis: 100%;
   opacity: 0.85;
+}
+.editing-note {
+  flex-basis: 100%;
+  color: var(--accent);
 }
 </style>

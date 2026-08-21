@@ -2,16 +2,38 @@
 import { computed, ref, watch } from "vue";
 import type { Op } from "../types";
 import { ALL_OPS, BINARY_OPS, UNARY_OPS } from "../types";
-import { universe, addFormula } from "../store";
+import { universe, addFormula, updateFormula, editing, reaches } from "../store";
 import { renderRef } from "../render";
 
 const op = ref<Op>("IMPLIES");
 const args = ref<string[]>(["", ""]);
 
-const refs = computed(() => [
-  ...universe.statements.map((s) => s.id),
-  ...(universe.formulas ?? []).map((f) => f.id),
-]);
+const editingFormula = computed(
+  () => (universe.formulas ?? []).find((f) => f.id === editing.value) ?? null,
+);
+
+watch(editingFormula, (f) => {
+  if (!f) return;
+  op.value = f.op;
+  args.value = [...f.args];
+});
+
+// While editing f, exclude f itself and anything that transitively
+// references f — picking those would create a reference cycle.
+const refs = computed(() => {
+  const all = [
+    ...universe.statements.map((s) => s.id),
+    ...(universe.formulas ?? []).map((f) => f.id),
+  ];
+  const target = editingFormula.value?.id;
+  return target ? all.filter((id) => !reaches(id, target)) : all;
+});
+
+function cancelEdit() {
+  editing.value = null;
+  args.value = ["", ""];
+  op.value = "IMPLIES";
+}
 
 const arity = computed(() =>
   UNARY_OPS.includes(op.value) ? 1 : BINARY_OPS.includes(op.value) ? 2 : -1,
@@ -35,13 +57,21 @@ const preview = computed(() => {
 
 function submit() {
   if (!complete.value) return;
-  addFormula(op.value, [...args.value]);
+  if (editingFormula.value) {
+    updateFormula(editingFormula.value.id, op.value, [...args.value]);
+    editing.value = null;
+  } else {
+    addFormula(op.value, [...args.value]);
+  }
   args.value = arity.value === 1 ? [""] : ["", ""];
 }
 </script>
 
 <template>
   <form v-if="refs.length > 0" class="composer" @submit.prevent="submit">
+    <span v-if="editingFormula" class="small editing-note">
+      Editing formula — cyclic choices are hidden.
+    </span>
     <select v-model="op" aria-label="Connective">
       <option v-for="o in ALL_OPS" :key="o" :value="o">{{ o }}</option>
     </select>
@@ -62,7 +92,10 @@ function submit() {
     >
       + term
     </button>
-    <button class="primary" type="submit" :disabled="!complete">Add formula</button>
+    <button class="primary" type="submit" :disabled="!complete">
+      {{ editingFormula ? "Save formula" : "Add formula" }}
+    </button>
+    <button v-if="editingFormula" type="button" @click="cancelEdit">Cancel</button>
     <span v-if="preview" class="muted small preview">{{ preview }}</span>
   </form>
 </template>
@@ -82,5 +115,9 @@ function submit() {
 }
 .preview {
   flex-basis: 100%;
+}
+.editing-note {
+  flex-basis: 100%;
+  color: var(--accent);
 }
 </style>
