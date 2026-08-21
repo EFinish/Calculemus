@@ -20,6 +20,15 @@ const object = ref("");
 
 const isVerb = computed(() => verbMode.value === "DOES" || verbMode.value === "DOES_NOT");
 
+// "is" typed as a verb would create an uninterpreted relation named "is" —
+// no membership or identity meaning — which is almost never what a human
+// wants. Refuse it and point at the copula (the philosophers' three-ways-
+// ambiguous "is" strikes again).
+const COPULA_WORDS = ["is", "are", "be", "am", "was", "were", "being", "been"];
+const copulaAsVerb = computed(
+  () => isVerb.value && COPULA_WORDS.includes(verb.value.trim().toLowerCase()),
+);
+
 const editingStatement = computed(
   () => universe.statements.find((s) => s.id === editing.value) ?? null,
 );
@@ -59,6 +68,7 @@ function phraseText(mode: PhraseMode, name: string): string {
 }
 
 const preview = computed(() => {
+  if (copulaAsVerb.value) return "";
   if (!subject.value.trim() || !object.value.trim()) return "";
   const subj = phraseText(subjectMode.value, subject.value);
   if (!isVerb.value) {
@@ -129,6 +139,11 @@ function submit() {
       :placeholder="isVerb ? 'object — the ball' : 'predicate — red'"
       aria-label="Predicate"
     />
+    <span v-if="copulaAsVerb" class="small copula-warning">
+      “{{ verb.trim() }}” as a verb would be an uninterpreted relation with no
+      membership meaning — for “{{ subject.trim() || "the ball" }} is {{ object.trim() || "red" }}”,
+      pick <strong>is</strong> in the dropdown instead (no verb needed).
+    </span>
     <button class="primary" type="submit" :disabled="!preview">
       {{ editingStatement ? "Save statement" : "Add statement" }}
     </button>
@@ -167,5 +182,9 @@ function submit() {
 .editing-note {
   flex-basis: 100%;
   color: var(--accent);
+}
+.copula-warning {
+  flex-basis: 100%;
+  color: var(--false);
 }
 </style>

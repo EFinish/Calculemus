@@ -120,3 +120,22 @@ test("the Example button loads the Frege universe ready to explore", async ({ pa
   await page.getByRole("button", { name: "Example" }).click();
   await expect(page.getByLabel("Universe title")).toHaveValue("The Frege step");
 });
+
+test("'is' typed as a verb is refused and redirected to the copula", async ({ page }) => {
+  await openEmpty(page);
+  await page.getByLabel("Quantifier", { exact: true }).selectOption("THE");
+  await page.getByLabel("Subject").fill("ball");
+  await page.getByLabel("Qualifier").selectOption("DOES");
+  await page.getByLabel("Verb").fill("is");
+  await page.getByLabel("Predicate").fill("red");
+  await expect(page.getByText("uninterpreted relation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add statement" })).toBeDisabled();
+
+  // A real verb clears the warning; the copula path works as ever.
+  await page.getByLabel("Verb").fill("throw");
+  await expect(page.getByText("uninterpreted relation")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add statement" })).toBeEnabled();
+  await page.getByLabel("Qualifier").selectOption("IS");
+  await page.getByRole("button", { name: "Add statement" }).click();
+  await expect(page.locator(".row", { hasText: "the ball is red" }).first()).toBeVisible();
+});
