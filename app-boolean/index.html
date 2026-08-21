@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculemus · Boolean</title>
+    <!-- Go's WASM shim is a classic script (defines globalThis.Go); it must
+         load before the app module asks the engine to boot. -->
+    <script src="/wasm_exec.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

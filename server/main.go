@@ -29,6 +29,8 @@ func main() {
 	addr := flag.String("addr", ":8737", "listen address")
 	dataDir := flag.String("data", "data", "directory for stored universe documents")
 	distDir := flag.String("dist", "app/dist", "built app to serve (empty to disable)")
+	booleanDist := flag.String("boolean-dist", "app-boolean/dist",
+		"frozen Boolean edition, mounted at /boolean/ (empty to disable)")
 	flag.Parse()
 
 	if err := os.MkdirAll(*dataDir, 0o755); err != nil {
@@ -39,6 +41,11 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/universes", s.publish)
 	mux.HandleFunc("GET /api/universes/{id}", s.fetch)
+	if *booleanDist != "" {
+		// The frozen edition is built with a relative base and shares via
+		// query params, so plain file serving suffices — no SPA fallback.
+		mux.Handle("GET /boolean/", http.StripPrefix("/boolean/", http.FileServer(http.Dir(*booleanDist))))
+	}
 	if *distDir != "" {
 		mux.Handle("GET /", spaHandler(*distDir))
 	}
