@@ -9,7 +9,7 @@ test("editing a statement reflows every verdict that touched it", async ({ page 
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(headerBadge(page)).toHaveText("consistent", { timeout: 20_000 });
-  await page.getByRole("button", { name: "Example" }).click();
+  await page.getByLabel("Try me").selectOption("The child and the ball");
 
   // The example derives "throws some of red" from the ball being red.
   await expect(

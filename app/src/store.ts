@@ -265,191 +265,32 @@ export function exportUniverse(): void {
   URL.revokeObjectURL(a.href);
 }
 
-// ---- built-in example --------------------------------------------------------
+// ---- built-in examples -------------------------------------------------------
 
-// "The child and the ball" (mirrored in examples/child-and-ball.json) — the
-// author's own universe, kept because it teaches the M6 lesson twice over:
-// f1/f2 are the old hand-written conditionals, yet in this universe they are
-// also DERIVABLE from "the ball is red" / "the ball is an object". Plus a
-// red/blue exclusion pair and a vacuous conditional.
-const EXAMPLE_UNIVERSE: Universe = {
-  "version": 2,
-  "title": "The child and the ball",
-  "statements": [
-    {
-      "id": "s1",
-      "text": "the ball is red",
-      "subject": "ball",
-      "predicate": "red",
-      "qualifier": "IS",
-      "subjectIsIndividual": true
-    },
-    {
-      "id": "s2",
-      "text": "the ball is an object",
-      "subject": "ball",
-      "predicate": "an object",
-      "qualifier": "IS",
-      "subjectIsIndividual": true
-    },
-    {
-      "id": "s3",
-      "text": "the child throws some of red",
-      "subject": "child",
-      "predicate": "red",
-      "qualifier": "IS",
-      "subjectIsIndividual": true,
-      "verb": "throws",
-      "objectQuantifier": "SOME"
-    },
-    {
-      "id": "s4",
-      "text": "the child throws the ball",
-      "subject": "child",
-      "predicate": "ball",
-      "qualifier": "IS",
-      "subjectIsIndividual": true,
-      "verb": "throws",
-      "objectIsIndividual": true
-    },
-    {
-      "id": "s5",
-      "text": "the ball is blue",
-      "subject": "ball",
-      "predicate": "blue",
-      "qualifier": "IS",
-      "subjectIsIndividual": true
-    },
-    {
-      "id": "s6",
-      "text": "the child throws some of an object",
-      "subject": "child",
-      "predicate": "an object",
-      "qualifier": "IS",
-      "subjectIsIndividual": true,
-      "verb": "throws",
-      "objectQuantifier": "SOME"
-    },
-    {
-      "id": "s7",
-      "text": "the ball is not red",
-      "subject": "ball",
-      "predicate": "red",
-      "qualifier": "IS_NOT",
-      "subjectIsIndividual": true
-    },
-    {
-      "id": "s8",
-      "text": "the ball is not blue",
-      "subject": "ball",
-      "predicate": "blue",
-      "qualifier": "IS_NOT",
-      "subjectIsIndividual": true
-    }
-  ],
-  "formulas": [
-    {
-      "id": "f1",
-      "op": "IMPLIES",
-      "args": [
-        "s4",
-        "s3"
-      ]
-    },
-    {
-      "id": "f2",
-      "op": "IMPLIES",
-      "args": [
-        "s4",
-        "s6"
-      ]
-    },
-    {
-      "id": "f3",
-      "op": "AND",
-      "args": [
-        "s3",
-        "s6"
-      ]
-    },
-    {
-      "id": "f4",
-      "op": "IMPLIES",
-      "args": [
-        "s1",
-        "s8"
-      ]
-    },
-    {
-      "id": "f5",
-      "op": "IMPLIES",
-      "args": [
-        "s5",
-        "s7"
-      ]
-    },
-    {
-      "id": "f6",
-      "op": "AND",
-      "args": [
-        "s1",
-        "s8"
-      ]
-    }
-  ],
-  "assertions": [
-    {
-      "formula": "s1",
-      "active": true,
-      "source": "hand"
-    },
-    {
-      "formula": "s4",
-      "active": true,
-      "source": "hand"
-    },
-    {
-      "formula": "s2",
-      "active": true,
-      "source": "hand"
-    },
-    {
-      "formula": "s8",
-      "active": true,
-      "source": "hand"
-    }
-  ],
-  "arguments": [
-    {
-      "id": "a1",
-      "title": "test 1",
-      "premises": [
-        "s1",
-        "s2",
-        "s4",
-        "f1",
-        "f2"
-      ],
-      "conclusion": "f3"
-    },
-    {
-      "id": "a2",
-      "title": "test 2",
-      "premises": [
-        "f4",
-        "f5",
-        "s1"
-      ],
-      "conclusion": "f6"
-    }
-  ],
-  "scenarios": [],
-  "layout": {}
-};
+// The "Try me!" gallery: famous arguments and gotchas, one per engine layer.
+// Canonical copies live in examples/*.json (also runnable via the CLI);
+// Vite inlines them at build time.
+import childBall from "../../examples/child-and-ball.json";
+import socrates from "../../examples/socrates.json";
+import crocodile from "../../examples/carrolls-crocodile.json";
+import impostors from "../../examples/ponens-and-impostors.json";
+import unicorns from "../../examples/unicorn-problem.json";
+import barber from "../../examples/russells-barber.json";
 
-export function loadExample(): void {
+export const EXAMPLES: { name: string; universe: Universe }[] = [
+  { name: "The child and the ball", universe: childBall as unknown as Universe },
+  { name: "Socrates is mortal", universe: socrates as unknown as Universe },
+  { name: "Carroll's crocodile", universe: crocodile as unknown as Universe },
+  { name: "Ponens and impostors", universe: impostors as unknown as Universe },
+  { name: "The unicorn problem", universe: unicorns as unknown as Universe },
+  { name: "Russell's barber", universe: barber as unknown as Universe },
+];
+
+export function loadExample(name: string): void {
+  const found = EXAMPLES.find((e) => e.name === name);
+  if (!found) return;
   resetUniverse();
-  Object.assign(universe, structuredClone(EXAMPLE_UNIVERSE));
+  Object.assign(universe, structuredClone(found.universe));
 }
 
 // ---- sharing (M5) -----------------------------------------------------------

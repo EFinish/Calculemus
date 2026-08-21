@@ -100,7 +100,7 @@ test("quantified verbs: all men throw some ball, socrates is a man", async ({ pa
 
 test("the Example button loads the child-and-ball universe", async ({ page }) => {
   await openEmpty(page);
-  await page.getByRole("button", { name: "Example" }).click();
+  await page.getByLabel("Try me").selectOption("The child and the ball");
   await expect(page.getByLabel("Universe title")).toHaveValue("The child and the ball");
   await expect(headerBadge(page)).toHaveText("consistent");
   await expect(page.getByText("worlds ≤ 6 things")).toBeVisible();
@@ -128,8 +128,8 @@ test("the Example button loads the child-and-ball universe", async ({ page }) =>
 
   // Replacing a non-empty universe asks first.
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: "Example" }).click();
-  await expect(page.getByLabel("Universe title")).toHaveValue("The child and the ball");
+  await page.getByLabel("Try me").selectOption("Socrates is mortal");
+  await expect(page.getByLabel("Universe title")).toHaveValue("Socrates is mortal");
 });
 
 test("'is' typed as a verb is refused and redirected to the copula", async ({ page }) => {

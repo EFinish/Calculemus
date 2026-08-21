@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "title": "Carroll's crocodile",
+  "statements": [
+    { "id": "s1", "text": "all babies are illogical",
+      "subject": "babies", "quantifier": "ALL", "qualifier": "IS", "predicate": "illogical" },
+    { "id": "s2", "text": "no one who can manage a crocodile is despised",
+      "subject": "crocodile managers", "quantifier": "NONE", "qualifier": "IS", "predicate": "despised" },
+    { "id": "s3", "text": "illogical persons are despised",
+      "subject": "illogical", "quantifier": "ALL", "qualifier": "IS", "predicate": "despised" },
+    { "id": "s4", "text": "no baby can manage a crocodile",
+      "subject": "babies", "quantifier": "NONE", "qualifier": "IS", "predicate": "crocodile managers" }
+  ],
+  "assertions": [
+    { "formula": "s1", "active": true, "source": "hand" },
+    { "formula": "s2", "active": true, "source": "hand" },
+    { "formula": "s3", "active": true, "source": "hand" }
+  ],
+  "arguments": [
+    { "id": "a1", "title": "Carroll's crocodile (Symbolic Logic, 1896)",
+      "premises": ["s1", "s2", "s3"], "conclusion": "s4" }
+  ]
+}

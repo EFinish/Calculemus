@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "title": "Ponens and impostors",
+  "statements": [
+    { "id": "p", "text": "it is raining" },
+    { "id": "q", "text": "the street is wet" }
+  ],
+  "formulas": [
+    { "id": "imp", "op": "IMPLIES", "args": ["p", "q"] },
+    { "id": "np", "op": "NOT", "args": ["p"] },
+    { "id": "nq", "op": "NOT", "args": ["q"] }
+  ],
+  "arguments": [
+    { "id": "mp", "title": "Modus ponens — the real thing",
+      "premises": ["imp", "p"], "conclusion": "q" },
+    { "id": "mt", "title": "Modus tollens — also real",
+      "premises": ["imp", "nq"], "conclusion": "np" },
+    { "id": "ac", "title": "Affirming the consequent — the impostor",
+      "premises": ["imp", "q"], "conclusion": "p" },
+    { "id": "da", "title": "Denying the antecedent — the other impostor",
+      "premises": ["imp", "np"], "conclusion": "nq" }
+  ]
+}

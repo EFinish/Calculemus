@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "title": "Russell's barber",
+  "statements": [
+    { "id": "b", "text": "the barber shaves himself" },
+    { "id": "m", "text": "the moon is made of cheese" }
+  ],
+  "formulas": [
+    { "id": "nb", "op": "NOT", "args": ["b"] },
+    { "id": "rule", "op": "IFF", "args": ["b", "nb"] }
+  ],
+  "assertions": [
+    { "formula": "rule", "active": true, "source": "hand" }
+  ],
+  "arguments": [
+    { "id": "a1", "title": "Ex falso quodlibet — from the impossible barber, anything follows",
+      "premises": ["rule"], "conclusion": "m" }
+  ]
+}

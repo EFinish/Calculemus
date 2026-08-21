@@ -7,5 +7,8 @@ export default defineConfig({
   // built app, so the proxy exists only for dev and e2e.
   server: {
     proxy: { "/api": "http://localhost:8737" },
+    // The Try-me gallery imports ../examples/*.json (canonical copies shared
+    // with the CLI); dev serving needs the parent dir allowed.
+    fs: { allow: [".."] },
   },
 });

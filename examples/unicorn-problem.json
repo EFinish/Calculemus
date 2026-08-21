@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "title": "The unicorn problem",
+  "statements": [
+    { "id": "s1", "text": "all unicorns are horned",
+      "subject": "unicorns", "quantifier": "ALL", "qualifier": "IS", "predicate": "horned" },
+    { "id": "s2", "text": "all unicorns are magical",
+      "subject": "unicorns", "quantifier": "ALL", "qualifier": "IS", "predicate": "magical" },
+    { "id": "s3", "text": "something magical is horned",
+      "subject": "magical", "quantifier": "SOME", "qualifier": "IS", "predicate": "horned" },
+    { "id": "s4", "text": "a magical unicorn exists",
+      "subject": "unicorns", "quantifier": "SOME", "qualifier": "IS", "predicate": "magical" }
+  ],
+  "assertions": [
+    { "formula": "s1", "active": true, "source": "hand" },
+    { "formula": "s2", "active": true, "source": "hand" }
+  ],
+  "arguments": [
+    { "id": "a1", "title": "Darapti — valid only if unicorns exist (they don't have to)",
+      "premises": ["s1", "s2"], "conclusion": "s3" },
+    { "id": "a2", "title": "Grant one unicorn — now it follows",
+      "premises": ["s1", "s2", "s4"], "conclusion": "s3" }
+  ]
+}

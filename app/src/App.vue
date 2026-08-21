@@ -15,6 +15,7 @@ import {
   loadShared,
   copyToWorkspace,
   loadExample,
+  EXAMPLES,
 } from "./store";
 import LibraryPane from "./components/LibraryPane.vue";
 import CanvasPane from "./components/CanvasPane.vue";
@@ -55,14 +56,19 @@ function onNew() {
   }
 }
 
-function onExample() {
+const tryMePick = ref("");
+
+function onTryMe() {
+  const name = tryMePick.value;
+  tryMePick.value = "";
+  if (!name) return;
   if (
     universe.statements.length > 0 &&
-    !window.confirm("Replace the current universe with the example? It is only kept if you exported it.")
+    !window.confirm(`Replace the current universe with “${name}”? It is only kept if you exported it.`)
   ) {
     return;
   }
-  loadExample();
+  loadExample(name);
 }
 
 function onNewScenario() {
@@ -112,12 +118,15 @@ function onDeleteScenario() {
     <button v-if="readOnly" class="primary" @click="copyToWorkspace">Copy to my workspace</button>
     <template v-else>
       <button @click="onNew">New</button>
-      <button
-        title="Load the example universe: derived relations, a red/blue exclusion, a vacuous conditional — the child and the ball"
-        @click="onExample"
+      <select
+        v-model="tryMePick"
+        aria-label="Try me"
+        title="Famous arguments and gotchas, ready to explore"
+        @change="onTryMe"
       >
-        Example
-      </button>
+        <option value="" disabled>Try me!</option>
+        <option v-for="e in EXAMPLES" :key="e.name" :value="e.name">{{ e.name }}</option>
+      </select>
       <button title="Publish an immutable snapshot and get a link anyone can open" @click="onShare">Share</button>
       <button @click="exportUniverse">Export</button>
       <button @click="fileInput?.click()">Import</button>

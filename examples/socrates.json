@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "title": "Socrates is mortal",
+  "statements": [
+    { "id": "s1", "text": "all men are mortal",
+      "subject": "men", "quantifier": "ALL", "qualifier": "IS", "predicate": "mortal" },
+    { "id": "s2", "text": "Socrates is a man",
+      "subject": "socrates", "subjectIsIndividual": true, "qualifier": "IS", "predicate": "men" },
+    { "id": "s3", "text": "Socrates is mortal",
+      "subject": "socrates", "subjectIsIndividual": true, "qualifier": "IS", "predicate": "mortal" }
+  ],
+  "assertions": [
+    { "formula": "s1", "active": true, "source": "hand" },
+    { "formula": "s2", "active": true, "source": "hand" }
+  ],
+  "arguments": [
+    { "id": "a1", "title": "Socrates is mortal (Barbara's little brother)",
+      "premises": ["s1", "s2"], "conclusion": "s3" },
+    { "id": "a2", "title": "The converse trap — mortal, therefore man?",
+      "premises": ["s1", "s3"], "conclusion": "s2" }
+  ]
+}
