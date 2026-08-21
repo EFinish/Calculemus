@@ -51,9 +51,11 @@ const argTitle = (id: string) =>
     <template v-if="statement">
       <p><strong>{{ statement.text }}</strong></p>
       <p v-if="statement.subject" class="muted small">
-        {{ statement.quantifier }} · {{ statement.subject }} · {{ statement.qualifier }} ·
+        {{ statement.subjectIsIndividual ? "THE" : statement.quantifier }} ·
+        {{ statement.subject }} ·
+        {{ statement.verb ? (statement.qualifier === "IS" ? "DOES" : "DOES NOT") + " " + statement.verb : statement.qualifier }} ·
+        {{ statement.objectIsIndividual ? "THE" : (statement.objectQuantifier ?? "") }}
         {{ statement.predicate }}
-        <span class="dim">(term structure — stored now, evaluated at M4)</span>
       </p>
       <p class="small">
         <span v-if="truthState === 'asserted'" class="badge info">asserted</span>
@@ -101,7 +103,8 @@ const argTitle = (id: string) =>
         <p class="small">
           <span class="badge ok">valid</span>
           <span class="muted">
-            No countermodel exists: in every possible world where the premises
+            No countermodel exists{{ verdicts?.boundedDomain ? ` among worlds with at most ${verdicts.boundedDomain} things` : "" }}:
+            in every {{ verdicts?.boundedDomain ? "such" : "possible" }} world where the premises
             hold, the conclusion holds too.
           </span>
         </p>

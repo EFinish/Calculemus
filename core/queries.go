@@ -55,6 +55,10 @@ type Verdicts struct {
 	Vacuous   []string          `json:"vacuous,omitempty"`
 	Arguments []ArgumentVerdict `json:"arguments,omitempty"`
 	Edges     []Edge            `json:"edges,omitempty"`
+	// BoundedDomain, when set, means relational (M6) semantics were in play:
+	// verdicts were checked over worlds with at most this many things.
+	// Countermodels found are absolute; "valid" is valid-up-to-this-bound.
+	BoundedDomain int `json:"boundedDomain,omitempty"`
 }
 
 // Evaluate runs every query against the universe's active assertions.
@@ -90,6 +94,9 @@ func evaluate(u *Universe, toggles map[string]bool) (*Verdicts, error) {
 	}
 
 	v := &Verdicts{}
+	if c.grounded != nil {
+		v.BoundedDomain = c.grounded.domain
+	}
 	v.Consistent, _ = c.sat(assume...)
 
 	if v.Consistent {

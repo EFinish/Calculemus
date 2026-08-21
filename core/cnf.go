@@ -19,6 +19,129 @@ type compiled struct {
 	// regionVars[component][mask] is the "this Venn region is inhabited"
 	// variable; index 0 (the all-absent region) is unused.
 	regionVars [][]int
+	// grounded is non-nil in relational (M6) mode; its domain size is
+	// surfaced as Verdicts.BoundedDomain.
+	grounded *grounding
+	kindVars map[string][]int   // kind -> var per domain element
+	verbVars map[string][][]int // verb -> var per (subject, object) element pair
+}
+
+func (c *compiled) fresh() int {
+	c.nVars++
+	return c.nVars
+}
+
+// andLit / orLit: a literal equivalent to the conjunction / disjunction of
+// lits, via a fresh defined variable (single literals pass through).
+func (c *compiled) andLit(lits []int) int {
+	if len(lits) == 1 {
+		return lits[0]
+	}
+	v := c.fresh()
+	c.defineAnd(v, lits)
+	return v
+}
+
+func (c *compiled) orLit(lits []int) int {
+	if len(lits) == 1 {
+		return lits[0]
+	}
+	v := c.fresh()
+	c.defineOr(v, lits)
+	return v
+}
+
+// encodeGrounded implements DESIGN §11: kinds as unary predicates and verbs
+// as binary ones over a bounded domain, with every groundable statement's
+// variable defined by its quantifier structure. Mirrors evalGroundedStmt —
+// the property tests hold the two to account.
+func (c *compiled) encodeGrounded() error {
+	g, err := buildGrounding(c.ix.u)
+	if err != nil {
+		return err
+	}
+	c.grounded = g
+	c.kindVars = make(map[string][]int, len(g.kinds))
+	for _, k := range g.kinds {
+		vars := make([]int, g.domain)
+		for d := range vars {
+			vars[d] = c.fresh()
+		}
+		c.kindVars[k] = vars
+	}
+	c.verbVars = make(map[string][][]int, len(g.verbs))
+	for _, v := range g.verbs {
+		grid := make([][]int, g.domain)
+		for d := range grid {
+			grid[d] = make([]int, g.domain)
+			for e := range grid[d] {
+				grid[d][e] = c.fresh()
+			}
+		}
+		c.verbVars[v] = grid
+	}
+
+	for _, s := range g.stmts {
+		lit := c.groundStatement(g, s)
+		c.defineAnd(c.varOf[s.ID], []int{lit}) // statement var ↔ its grounding
+	}
+	return nil
+}
+
+// groundStatement returns a literal equivalent to the statement's truth over
+// the bounded domain.
+func (c *compiled) groundStatement(g *grounding, s *Statement) int {
+	pred := func(d int) int {
+		if s.Verb == "" {
+			return c.kindVars[termKey(s.Predicate)][d]
+		}
+		verb := c.verbVars[termKey(s.Verb)]
+		if s.ObjectIsIndividual {
+			return verb[d][g.indIndex[termKey(s.Predicate)]]
+		}
+		objKind := c.kindVars[termKey(s.Predicate)]
+		lits := make([]int, 0, g.domain)
+		switch s.ObjectQuantifier {
+		case QuantAll: // ∀e obj(e) → V(d,e)
+			for e := 0; e < g.domain; e++ {
+				lits = append(lits, c.orLit([]int{-objKind[e], verb[d][e]}))
+			}
+			return c.andLit(lits)
+		case QuantNone: // ∀e obj(e) → ¬V(d,e)
+			for e := 0; e < g.domain; e++ {
+				lits = append(lits, c.orLit([]int{-objKind[e], -verb[d][e]}))
+			}
+			return c.andLit(lits)
+		default: // SOME: ∃e obj(e) ∧ V(d,e)
+			for e := 0; e < g.domain; e++ {
+				lits = append(lits, c.andLit([]int{objKind[e], verb[d][e]}))
+			}
+			return c.orLit(lits)
+		}
+	}
+
+	universal, positive := posOf(s)
+	sign := func(lit int) int {
+		if positive {
+			return lit
+		}
+		return -lit
+	}
+	if s.SubjectIsIndividual {
+		return sign(pred(g.indIndex[termKey(s.Subject)]))
+	}
+	subjKind := c.kindVars[termKey(s.Subject)]
+	lits := make([]int, 0, g.domain)
+	if universal { // ∀d subj(d) → ±pred(d)
+		for d := 0; d < g.domain; d++ {
+			lits = append(lits, c.orLit([]int{-subjKind[d], sign(pred(d))}))
+		}
+		return c.andLit(lits)
+	}
+	for d := 0; d < g.domain; d++ { // ∃d subj(d) ∧ ±pred(d)
+		lits = append(lits, c.andLit([]int{subjKind[d], sign(pred(d))}))
+	}
+	return c.orLit(lits)
 }
 
 func compile(ix *index) (*compiled, error) {
@@ -34,6 +157,16 @@ func compile(ix *index) (*compiled, error) {
 	}
 	for i := range ix.u.Formulas {
 		c.encode(&ix.u.Formulas[i])
+	}
+
+	// M6: any verb or individual switches the whole term layer to
+	// bounded-domain grounding (relational.go). Otherwise the M4 Venn-region
+	// encoding applies — exact, and unchanged for every pre-M6 universe.
+	if relationalMode(ix.u) {
+		if err := c.encodeGrounded(); err != nil {
+			return nil, err
+		}
+		return c, nil
 	}
 
 	// M4: statements with term structure stop being free atoms — their

@@ -1,54 +1,102 @@
 <script setup lang="ts">
 // Guided composition (apriorio's best invention): pick the pieces, never
-// type raw logic. The sentence is generated live from the parts.
+// type raw logic. M6 grows the grammar one slot: subject phrase + verb +
+// object phrase. Defaults ("all of … is …") are exactly the pre-M6 copular
+// form, so nothing changes until you reach for "the" or a verb.
 import { computed, ref } from "vue";
-import type { Qualifier, Quantifier } from "../types";
+import type { Qualifier, Quantifier, Statement } from "../types";
 import { addStatement } from "../store";
 
-const subject = ref("");
-const quantifier = ref<Quantifier>("ALL");
-const predicate = ref("");
-const qualifier = ref<Qualifier>("IS");
+// "THE" marks an individual phrase; the rest are kind quantifiers.
+type PhraseMode = Quantifier | "THE";
+type VerbMode = "IS" | "IS_NOT" | "DOES" | "DOES_NOT";
 
-const QUANT_WORDS: Record<Quantifier, string> = {
+const subjectMode = ref<PhraseMode>("ALL");
+const subject = ref("");
+const verbMode = ref<VerbMode>("IS");
+const verb = ref("");
+const objectMode = ref<PhraseMode>("THE");
+const object = ref("");
+
+const isVerb = computed(() => verbMode.value === "DOES" || verbMode.value === "DOES_NOT");
+const negated = computed(() => verbMode.value === "IS_NOT" || verbMode.value === "DOES_NOT");
+
+const PHRASE_WORDS: Record<PhraseMode, string> = {
   ALL: "all of",
   SOME: "some of",
   NONE: "none of",
+  THE: "the",
 };
 
+function phraseText(mode: PhraseMode, name: string): string {
+  return `${PHRASE_WORDS[mode]} ${name.trim()}`;
+}
+
 const preview = computed(() => {
-  if (!subject.value.trim() || !predicate.value.trim()) return "";
-  const is = qualifier.value === "IS" ? "is" : "is not";
-  return `${QUANT_WORDS[quantifier.value]} ${subject.value.trim()} ${is} ${predicate.value.trim()}`;
+  if (!subject.value.trim() || !object.value.trim()) return "";
+  const subj = phraseText(subjectMode.value, subject.value);
+  if (!isVerb.value) {
+    return `${subj} ${negated.value ? "is not" : "is"} ${object.value.trim()}`;
+  }
+  if (!verb.value.trim()) return "";
+  const verbPart = negated.value ? `does not ${verb.value.trim()}` : `${verb.value.trim()}s`;
+  return `${subj} ${verbPart} ${phraseText(objectMode.value, object.value)}`;
 });
 
 function submit() {
   if (!preview.value) return;
-  addStatement({
+  const s: Omit<Statement, "id"> = {
     text: preview.value,
     subject: subject.value.trim(),
-    quantifier: quantifier.value,
-    predicate: predicate.value.trim(),
-    qualifier: qualifier.value,
-  });
+    predicate: object.value.trim(),
+    qualifier: negated.value ? "IS_NOT" : "IS",
+  };
+  if (subjectMode.value === "THE") s.subjectIsIndividual = true;
+  else s.quantifier = subjectMode.value;
+  if (isVerb.value) {
+    s.verb = verb.value.trim();
+    if (objectMode.value === "THE") s.objectIsIndividual = true;
+    else s.objectQuantifier = objectMode.value;
+  }
+  addStatement(s);
   subject.value = "";
-  predicate.value = "";
+  object.value = "";
+  verb.value = "";
 }
 </script>
 
 <template>
   <form class="composer" @submit.prevent="submit">
-    <select v-model="quantifier" aria-label="Quantifier">
+    <select v-model="subjectMode" aria-label="Quantifier">
+      <option value="ALL">all of</option>
+      <option value="SOME">some of</option>
+      <option value="NONE">none of</option>
+      <option value="THE">the</option>
+    </select>
+    <input v-model="subject" placeholder="subject — the ball" aria-label="Subject" />
+    <select v-model="verbMode" aria-label="Qualifier">
+      <option value="IS">is</option>
+      <option value="IS_NOT">is not</option>
+      <option value="DOES">does…</option>
+      <option value="DOES_NOT">does not…</option>
+    </select>
+    <input
+      v-if="isVerb"
+      v-model="verb"
+      placeholder="verb — throw"
+      aria-label="Verb"
+    />
+    <select v-if="isVerb" v-model="objectMode" aria-label="Object quantifier">
+      <option value="THE">the</option>
       <option value="ALL">all of</option>
       <option value="SOME">some of</option>
       <option value="NONE">none of</option>
     </select>
-    <input v-model="subject" placeholder="subject — the ball" aria-label="Subject" />
-    <select v-model="qualifier" aria-label="Qualifier">
-      <option value="IS">is</option>
-      <option value="IS_NOT">is not</option>
-    </select>
-    <input v-model="predicate" placeholder="predicate — red" aria-label="Predicate" />
+    <input
+      v-model="object"
+      :placeholder="isVerb ? 'object — the ball' : 'predicate — red'"
+      aria-label="Predicate"
+    />
     <button class="primary" type="submit" :disabled="!preview">Add statement</button>
     <span v-if="preview" class="muted small preview">“{{ preview }}”</span>
   </form>
@@ -66,7 +114,7 @@ function submit() {
 }
 .composer input {
   flex: 1;
-  min-width: 8rem;
+  min-width: 7rem;
 }
 .preview {
   flex-basis: 100%;

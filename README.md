@@ -17,6 +17,16 @@ the guardrails written against their causes of death, lives in
 
 ## Status
 
+**M6 — relations (the Frege step, DESIGN §11).** Statements grew a verb
+slot and phrases can be individuals ("the boy") or quantified kinds ("all
+men"): `the boy throws the ball` + `the ball is red` now *derives* `the
+boy throws something red` — the inference that used to need a hand-written
+conditional. Semantics: bounded-domain grounding to SAT (named individuals
++ 4 witnesses, capped at 8); countermodels are absolute, "valid" means "no
+countermodel with ≤ N things", and the UI says so. The pre-M6 workbench is
+frozen at **/boolean/** — two apps, one site, no data carry-over.
+
+
 **M5 — sharing.** `make serve` runs the one allowed piece of infrastructure:
 a thin Go document store (imports core/ to validate, never to reason) that
 also serves the built app. Share publishes an immutable snapshot at

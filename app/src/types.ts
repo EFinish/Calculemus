@@ -29,6 +29,11 @@ export interface Statement {
   quantifier?: Quantifier;
   predicate?: string;
   qualifier?: Qualifier;
+  // M6 relational grammar (DESIGN §11): verb "" or absent = copula.
+  verb?: string;
+  subjectIsIndividual?: boolean;
+  objectIsIndividual?: boolean;
+  objectQuantifier?: Quantifier;
 }
 
 export interface Formula {
@@ -63,6 +68,7 @@ export interface Point {
 export interface Universe {
   version: number;
   title: string;
+  witnesses?: number;
   statements: Statement[];
   formulas?: Formula[];
   assertions?: Assertion[];
@@ -94,4 +100,5 @@ export interface Verdicts {
   vacuous?: string[];
   arguments?: ArgumentVerdict[];
   edges?: Edge[];
+  boundedDomain?: number;
 }

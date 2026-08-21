@@ -26,14 +26,25 @@ const (
 )
 
 // Statement is the atom: a declarative sentence the engine treats as a
-// propositional variable.
+// propositional variable (until term structure gives it internal semantics).
+//
+// M6 (DESIGN §11) adds the relational form: subject phrase + verb + object
+// phrase. Verb "" means the copula, which is exactly the M4 shape — so every
+// pre-M6 document parses and means the same thing. Predicate doubles as the
+// object name for verb statements. A phrase is either an *individual* (a
+// constant: "the boy") or a quantified *kind* ("all men").
 type Statement struct {
 	ID         string     `json:"id"`
 	Text       string     `json:"text"`
 	Subject    string     `json:"subject,omitempty"`
 	Quantifier Quantifier `json:"quantifier,omitempty"`
 	Predicate  string     `json:"predicate,omitempty"`
-	Qualifier  Qualifier  `json:"qualifier,omitempty"`
+	Qualifier  Qualifier  `json:"qualifier,omitempty"` // IS/IS_NOT; for verbs, does/does not
+
+	Verb                string     `json:"verb,omitempty"`
+	SubjectIsIndividual bool       `json:"subjectIsIndividual,omitempty"`
+	ObjectIsIndividual  bool       `json:"objectIsIndividual,omitempty"`
+	ObjectQuantifier    Quantifier `json:"objectQuantifier,omitempty"` // kind objects of verbs
 }
 
 // Op is a logical connective. XOR, NAND, NOR, XNOR are kept as sugar for
@@ -95,8 +106,12 @@ type Point struct {
 
 // Universe is the document: one universe = one JSON file = one canvas.
 type Universe struct {
-	Version    int              `json:"version"`
-	Title      string           `json:"title"`
+	Version int    `json:"version"`
+	Title   string `json:"title"`
+	// Witnesses: anonymous domain elements added beyond the named individuals
+	// when relational semantics are in play (0 means the default, 4). See
+	// DESIGN §11 — "valid" then means "no countermodel with ≤ N things".
+	Witnesses  int              `json:"witnesses,omitempty"`
 	Statements []Statement      `json:"statements"`
 	Formulas   []Formula        `json:"formulas,omitempty"`
 	Assertions []Assertion      `json:"assertions,omitempty"`

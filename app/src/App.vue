@@ -70,12 +70,20 @@ function onDeleteScenario() {
 
 <template>
   <header>
-    <span class="wordmark">∴ Calculemus</span>
+    <span class="wordmark">∴ Calculemus <span class="edition">Relational</span></span>
+    <a class="edition-link" href="/boolean/" title="The frozen M0–M5 edition: propositional + monadic, no verbs">boolean edition →</a>
     <input v-model="universe.title" class="title" aria-label="Universe title" :readonly="readOnly" />
     <span v-if="engineError" class="badge bad" :title="engineError">engine error</span>
     <span v-else-if="!verdicts" class="badge muted">evaluating…</span>
     <span v-else-if="verdicts.consistent" class="badge ok">consistent</span>
     <span v-else class="badge bad">contradictory</span>
+    <span
+      v-if="verdicts?.boundedDomain"
+      class="badge info"
+      :title="`Relational semantics: countermodels are absolute; 'valid' means no countermodel among worlds with at most ${verdicts.boundedDomain} things`"
+    >
+      worlds ≤ {{ verdicts.boundedDomain }} things
+    </span>
     <select
       v-if="(universe.scenarios ?? []).length > 0"
       v-model="activeScenario"
@@ -131,6 +139,16 @@ header {
 .wordmark {
   font-weight: 700;
   color: var(--accent);
+  white-space: nowrap;
+}
+.edition {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.8em;
+}
+.edition-link {
+  font-size: 0.8rem;
+  color: var(--muted);
   white-space: nowrap;
 }
 .title {

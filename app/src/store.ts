@@ -6,7 +6,8 @@ import { reactive, ref, watch } from "vue";
 import type { Argument, Formula, Op, Statement, Universe, Verdicts } from "./types";
 import { evaluate } from "./engine";
 
-const STORAGE_KEY = "calculemus.universe";
+// v2 key: the frozen Boolean edition keeps "calculemus.universe" untouched.
+const STORAGE_KEY = "calculemus.v2.universe";
 
 export function emptyUniverse(): Universe {
   return {

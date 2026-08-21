@@ -94,7 +94,9 @@ func classifySyllogism(ix *index, arg *Argument) string {
 // structured statement, else nil.
 func aForm(ix *index, id string) *[2]string {
 	s := ix.stmt[id]
-	if s == nil || !structured(s) || formOf(s) != formA {
+	// Relational statements are excluded: formOf ignores the verb, and
+	// "all men THROW balls" is not a Barbara premise however it quantifies.
+	if s == nil || relationalTrigger(s) || !structured(s) || formOf(s) != formA {
 		return nil
 	}
 	return &[2]string{termKey(s.Subject), termKey(s.Predicate)}

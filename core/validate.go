@@ -50,6 +50,15 @@ func buildIndex(u *Universe) (*index, error) {
 		ix.form[f.ID] = f
 	}
 
+	for i := range u.Statements {
+		s := &u.Statements[i]
+		if relationalTrigger(s) {
+			if err := validateRelationalStatement(s); err != nil {
+				report("statement %q: %v", s.ID, err)
+			}
+		}
+	}
+
 	for _, f := range ix.form {
 		if err := checkArity(f); err != nil {
 			report("formula %q: %v", f.ID, err)

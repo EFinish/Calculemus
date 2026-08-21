@@ -21,10 +21,11 @@ type regionBit struct {
 type oracle struct {
 	ix    *index
 	atoms []string // OPAQUE statement ids, universe order
-	ts    *termSystem
-	// One enumeration bit per Venn region per component; structured
-	// statements' truths are derived from these, never enumerated freely.
+	// Venn mode (pure M4): one enumeration bit per region per component.
+	ts      *termSystem
 	regions []regionBit
+	// Grounded mode (M6): one bit per kind×element and per verb×pair.
+	g *grounding
 }
 
 func newOracle(t *testing.T, u *Universe) *oracle {
@@ -33,11 +34,29 @@ func newOracle(t *testing.T, u *Universe) *oracle {
 	if err != nil {
 		t.Fatalf("buildIndex: %v", err)
 	}
+	o := &oracle{ix: ix}
+	if relationalMode(u) {
+		g, err := buildGrounding(u)
+		if err != nil {
+			t.Fatalf("buildGrounding: %v", err)
+		}
+		o.g = g
+		for i := range u.Statements {
+			if !groundable(&u.Statements[i]) {
+				o.atoms = append(o.atoms, u.Statements[i].ID)
+			}
+		}
+		bits := len(o.atoms) + len(g.kinds)*g.domain + len(g.verbs)*g.domain*g.domain
+		if bits > 18 {
+			t.Fatalf("grounded oracle limited to 18 bits, got %d", bits)
+		}
+		return o
+	}
 	ts, err := buildTermSystem(u)
 	if err != nil {
 		t.Fatalf("buildTermSystem: %v", err)
 	}
-	o := &oracle{ix: ix, ts: ts}
+	o.ts = ts
 	for i := range u.Statements {
 		if !structured(&u.Statements[i]) {
 			o.atoms = append(o.atoms, u.Statements[i].ID)
@@ -56,31 +75,66 @@ func newOracle(t *testing.T, u *Universe) *oracle {
 	return o
 }
 
-// forEachModel visits every world (opaque-atom assignment × inhabited-region
-// configuration) under which all refs hold. Structured statements get their
-// truth derived from the regions via the definitional semantics.
+// forEachModel visits every world under which all refs hold. In Venn mode a
+// world is opaque atoms × inhabited regions; in grounded mode it is opaque
+// atoms × a full extension for every kind and verb over the bounded domain.
+// Term-structured statements get their truth derived, never enumerated.
 func (o *oracle) forEachModel(refs []string, visit func(assign map[string]bool)) {
-	nA, nR := len(o.atoms), len(o.regions)
-	for bits := 0; bits < 1<<(nA+nR); bits++ {
-		assign := make(map[string]bool, nA+len(o.ts.stmts))
+	nA := len(o.atoms)
+	derive := func(bits int, assign map[string]bool) {}
+	total := nA
+
+	if o.g != nil {
+		g := o.g
+		kindBase := nA
+		verbBase := nA + len(g.kinds)*g.domain
+		total = verbBase + len(g.verbs)*g.domain*g.domain
+		kindIdx := map[string]int{}
+		for i, k := range g.kinds {
+			kindIdx[k] = i
+		}
+		verbIdx := map[string]int{}
+		for i, v := range g.verbs {
+			verbIdx[v] = i
+		}
+		derive = func(bits int, assign map[string]bool) {
+			kindVal := func(kind string, d int) bool {
+				return bits&(1<<(kindBase+kindIdx[kind]*g.domain+d)) != 0
+			}
+			verbVal := func(verb string, d, e int) bool {
+				return bits&(1<<(verbBase+verbIdx[verb]*g.domain*g.domain+d*g.domain+e)) != 0
+			}
+			for _, s := range g.stmts {
+				assign[s.ID] = evalGroundedStmt(g, s, kindVal, verbVal)
+			}
+		}
+	} else {
+		total = nA + len(o.regions)
+		derive = func(bits int, assign map[string]bool) {
+			inhabited := func(ci, mask int) bool {
+				for j, r := range o.regions {
+					if r.component == ci && r.mask == mask {
+						return bits&(1<<(nA+j)) != 0
+					}
+				}
+				return false
+			}
+			for i := range o.ts.stmts {
+				st := &o.ts.stmts[i]
+				k := len(o.ts.components[st.component].terms)
+				assign[st.stmtID] = st.evalStructured(k, func(mask int) bool {
+					return inhabited(st.component, mask)
+				})
+			}
+		}
+	}
+
+	for bits := 0; bits < 1<<total; bits++ {
+		assign := make(map[string]bool, len(o.ix.u.Statements))
 		for i, id := range o.atoms {
 			assign[id] = bits&(1<<i) != 0
 		}
-		inhabited := func(ci, mask int) bool {
-			for j, r := range o.regions {
-				if r.component == ci && r.mask == mask {
-					return bits&(1<<(nA+j)) != 0
-				}
-			}
-			return false
-		}
-		for i := range o.ts.stmts {
-			st := &o.ts.stmts[i]
-			k := len(o.ts.components[st.component].terms)
-			assign[st.stmtID] = st.evalStructured(k, func(mask int) bool {
-				return inhabited(st.component, mask)
-			})
-		}
+		derive(bits, assign)
 		holds := true
 		for _, ref := range refs {
 			if !o.ix.eval(ref, assign) {

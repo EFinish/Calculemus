@@ -59,7 +59,7 @@ test("dragged layout persists in the document and survives reload", async ({ pag
 
   const stored = () =>
     page.evaluate(() => {
-      const u = JSON.parse(localStorage.getItem("calculemus.universe")!);
+      const u = JSON.parse(localStorage.getItem("calculemus.v2.universe")!);
       return u.layout?.s1 ?? null;
     });
   const pos = await stored();
