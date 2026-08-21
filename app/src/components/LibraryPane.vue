@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { universe, verdicts, isAsserted, setAsserted, referencedBy, removeRef, select, selected } from "../store";
+import { universe, verdicts, isAsserted, setAsserted, referencedBy, removeRef, select, selected, readOnly } from "../store";
 import { renderRef } from "../render";
 import StatementComposer from "./StatementComposer.vue";
 import FormulaComposer from "./FormulaComposer.vue";
@@ -35,6 +35,7 @@ function deleteTitle(id: string): string {
           <input
             type="checkbox"
             :checked="isAsserted(s.id)"
+            :disabled="readOnly"
             @change="setAsserted(s.id, ($event.target as HTMLInputElement).checked)"
           />
           assert
@@ -45,14 +46,14 @@ function deleteTitle(id: string): string {
         <span v-else-if="truthOf(s.id) === 'false'" class="badge bad">⊨ false</span>
         <button
           class="small"
-          :disabled="referencedBy(s.id).length > 0"
+          :disabled="readOnly || referencedBy(s.id).length > 0"
           :title="deleteTitle(s.id)"
           @click.stop="removeRef(s.id)"
         >
           ✕
         </button>
       </div>
-      <StatementComposer />
+      <StatementComposer v-if="!readOnly" />
     </section>
 
     <section class="card">
@@ -65,6 +66,7 @@ function deleteTitle(id: string): string {
           <input
             type="checkbox"
             :checked="isAsserted(f.id)"
+            :disabled="readOnly"
             @change="setAsserted(f.id, ($event.target as HTMLInputElement).checked)"
           />
           assert
@@ -80,14 +82,14 @@ function deleteTitle(id: string): string {
         </span>
         <button
           class="small"
-          :disabled="referencedBy(f.id).length > 0"
+          :disabled="readOnly || referencedBy(f.id).length > 0"
           :title="deleteTitle(f.id)"
           @click.stop="removeRef(f.id)"
         >
           ✕
         </button>
       </div>
-      <FormulaComposer />
+      <FormulaComposer v-if="!readOnly" />
     </section>
 
     <section class="card">
@@ -117,9 +119,9 @@ function deleteTitle(id: string): string {
           valid
         </span>
         <span v-else-if="verdicts" class="badge bad">invalid</span>
-        <button class="small" title="Delete" @click.stop="removeRef(a.id)">✕</button>
+        <button class="small" title="Delete" :disabled="readOnly" @click.stop="removeRef(a.id)">✕</button>
       </div>
-      <ArgumentComposer />
+      <ArgumentComposer v-if="!readOnly" />
     </section>
   </div>
 </template>

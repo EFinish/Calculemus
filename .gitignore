@@ -6,3 +6,7 @@ app/node_modules/
 app/dist/
 app/test-results/
 app/playwright-report/
+
+# sharing-server document stores (local runs and e2e)
+data/
+.e2e-data/

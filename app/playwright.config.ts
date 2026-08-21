@@ -17,10 +17,20 @@ export default defineConfig({
       use: { ...devices["Desktop Firefox"], viewport: { width: 1600, height: 1000 } },
     },
   ],
-  webServer: {
-    // Assumes `make wasm` has populated public/ (calculemus.wasm + wasm_exec.js).
-    command: "npx vite --port 5199 --strictPort",
-    port: 5199,
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      // Assumes `make wasm` has populated public/ (calculemus.wasm + wasm_exec.js).
+      command: "npx vite --port 5199 --strictPort",
+      port: 5199,
+      reuseExistingServer: true,
+    },
+    {
+      // The sharing server, reached through vite's /api proxy. Static
+      // serving disabled — the app comes from vite here.
+      command: 'go run ./server -addr :8737 -data .e2e-data -dist ""',
+      cwd: "..",
+      port: 8737,
+      reuseExistingServer: true,
+    },
+  ],
 });

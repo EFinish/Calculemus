@@ -4,7 +4,7 @@
 
 GOROOT := $(shell go env GOROOT)
 
-.PHONY: test wasm smoke dev build e2e
+.PHONY: test wasm smoke dev build e2e serve
 
 test:
 	go test ./...
@@ -28,3 +28,8 @@ build: test wasm
 # app, verify live verdicts, reload, verify persistence.
 e2e: wasm
 	cd app && npx playwright test
+
+# Production: engine tests, WASM, app build, then one binary serving
+# everything — the app, and the /api document store for shared universes.
+serve: build
+	go run ./server -addr :8737 -data data -dist app/dist

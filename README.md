@@ -17,6 +17,12 @@ the guardrails written against their causes of death, lives in
 
 ## Status
 
+**M5 — sharing.** `make serve` runs the one allowed piece of infrastructure:
+a thin Go document store (imports core/ to validate, never to reason) that
+also serves the built app. Share publishes an immutable snapshot at
+/u/{id}; recipients explore it read-only — scenarios included — and can
+copy it into their own workspace. The roadmap (DESIGN §8) is complete.
+
 **M4 — term logic.** ALL/SOME/NONE quantifiers now mean something:
 statements sharing terms are semantically linked via Venn-region
 compilation (Boolean reading, no existential import) — Barbara validates
@@ -91,5 +97,5 @@ the web is a theorem, never a drawing. Validity is decided by semantics
 core/    the engine — model, solver, queries          [M0, here]
 wasm/    GOOS=js bridge: evaluate(universe) → verdicts [M1]
 app/     Vue 3 + vue-flow frontend                     [M1–M3]
-server/  thin Go document store, imports core/         [M5 — not before]
+server/  thin Go document store, imports core/         [M5, here]
 ```

@@ -42,6 +42,11 @@ export const activeScenario = ref("");
 // selected row again deselects.
 export const selected = ref<string | null>(null);
 
+// Read-only mode: viewing someone else's shared universe. Verdicts and
+// scenario switching work; edits and persistence are off, so the viewer's
+// own saved universe is never clobbered.
+export const readOnly = ref(false);
+
 export function select(id: string): void {
   selected.value = selected.value === id ? null : id;
 }
@@ -63,7 +68,7 @@ watch(
     // Persist synchronously: a debounced save loses the last change when the
     // tab closes or reloads inside the window (guardrail R2). The document is
     // small; only the engine evaluation is worth debouncing.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(universe));
+    if (!readOnly.value) localStorage.setItem(STORAGE_KEY, JSON.stringify(universe));
     clearTimeout(timer);
     timer = setTimeout(evaluateNow, 250);
   },
@@ -112,6 +117,7 @@ export function isAsserted(ref: string): boolean {
 }
 
 export function setAsserted(ref: string, on: boolean): void {
+  if (readOnly.value) return;
   const sc = currentScenario();
   if (sc) {
     sc.toggles[ref] = on;
@@ -128,6 +134,7 @@ export function setAsserted(ref: string, on: boolean): void {
 }
 
 export function addScenario(name: string): string {
+  if (readOnly.value) return "Read-only view — copy to your workspace first.";
   const trimmed = name.trim();
   if (!trimmed) return "A scenario needs a name.";
   if ((universe.scenarios ?? []).some((s) => s.name === trimmed)) {
@@ -160,7 +167,7 @@ export function referencedBy(id: string): string[] {
 }
 
 export function removeRef(id: string): void {
-  if (referencedBy(id).length > 0) return;
+  if (readOnly.value || referencedBy(id).length > 0) return;
   if (selected.value === id) selected.value = null;
   universe.statements = spliceById(universe.statements, id);
   universe.formulas = spliceById(universe.formulas ?? [], id);
@@ -203,6 +210,48 @@ export function exportUniverse(): void {
   a.download = `${universe.title.replace(/[^\w-]+/g, "-").toLowerCase() || "universe"}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+// ---- sharing (M5) -----------------------------------------------------------
+
+// shareUniverse publishes an immutable snapshot and returns its share URL.
+export async function shareUniverse(): Promise<string> {
+  const res = await fetch("/api/universes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(universe),
+  });
+  const body = (await res.json()) as { path?: string; error?: string };
+  if (!res.ok || !body.path) {
+    throw new Error(body.error ?? `share failed (${res.status})`);
+  }
+  return `${location.origin}${body.path}`;
+}
+
+// loadShared fetches a shared universe into read-only view. Returns "" on
+// success, an error message otherwise.
+export async function loadShared(id: string): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch(`/api/universes/${id}`);
+  } catch {
+    return "Could not reach the sharing server.";
+  }
+  if (!res.ok) return "That shared universe doesn't exist (or the link is stale).";
+  const parsed = (await res.json()) as Universe;
+  readOnly.value = true;
+  activeScenario.value = "";
+  selected.value = null;
+  Object.assign(universe, emptyUniverse(), parsed);
+  return "";
+}
+
+// copyToWorkspace adopts the shared universe as the viewer's own: editing
+// and persistence come back on, and the URL returns to the workbench.
+export function copyToWorkspace(): void {
+  readOnly.value = false;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(universe));
+  history.replaceState(null, "", "/");
 }
 
 export function importUniverse(text: string): string {
